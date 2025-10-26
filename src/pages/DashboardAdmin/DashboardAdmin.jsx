@@ -1,4 +1,38 @@
-// src/pages/DashboardAdmin.jsx
+import AdminNavbar from './AdminNavbar';
+import AdminKPIs from './AdminKPIs';
+import AdminListaEnvios from './AdminListaEnvios';
+
+ const DashboardAdmin = () => {
+  return (
+    <div className="dashboard">
+      <AdminNavbar />
+
+      <div className="dashboard-content">
+        {/* Header */}
+        <div className="dashboard-header">
+          <h1 className="dashboard-title">Panel de Administración</h1>
+          <p className="dashboard-subtitle">
+            Gestión global de envíos y usuarios
+          </p>
+        </div>
+
+        <AdminKPIs />
+        
+        <AdminListaEnvios />
+      </div>
+    </div>
+  );
+}
+
+export default DashboardAdmin;
+
+
+
+
+
+
+`{/*
+
 import { Link, useNavigate } from "react-router-dom";
 
 export default function DashboardAdmin() {
@@ -360,3 +394,5 @@ export default function DashboardAdmin() {
     </div>
   );
 }
+
+*/}`
