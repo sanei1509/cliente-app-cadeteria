@@ -1422,3 +1422,53 @@ a:hover {
 /* Quitar azules heredados de otros estilos */
 a { color: var(--primary-color) !important; }
 a:hover { color: var(--primary-dark) !important; }
+
+
+/* --- Password field with toggle --- */
+.password-field {
+  position: relative;
+}
+
+/* --- Password field with toggle (CORREGIDO) --- */
+.password-field {
+  position: relative;
+}
+
+.password-field .form-label {
+  display: block;
+  margin-bottom: var(--spacing-xs);
+}
+
+.password-input {
+  padding-right: 2.5rem; /* espacio para el ojo */
+}
+
+.password-toggle {
+  position: absolute;
+  right: 0.75rem;
+  bottom: 0.875rem; /* Alinea con el centro del input */
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  outline: none;
+  transition: opacity var(--transition-fast);
+}
+
+.password-toggle svg {
+  width: 20px;
+  height: 20px;
+  color: var(--text-secondary);
+  transition: color var(--transition-fast);
+}
+
+.password-toggle:hover svg {
+  color: var(--text-primary);
+}
+
+.password-toggle:active {
+  transform: scale(0.95);
+}
