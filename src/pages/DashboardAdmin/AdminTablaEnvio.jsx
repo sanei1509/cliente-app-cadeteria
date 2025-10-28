@@ -1,7 +1,9 @@
 // src/components/admin/AdminTablaEnvio.jsx
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 export default function AdminTablaEnvio({ envio, onEditar, onCancelar }) {//onEditar y onCAncelar por si queremos agregar logica por props
+  const navigate = useNavigate();
   const [estado, setEstado] = useState(envio.estadoValue);
 
   const getEstadoColor = (estadoValue) => {
@@ -61,7 +63,7 @@ export default function AdminTablaEnvio({ envio, onEditar, onCancelar }) {//onEd
             <button
               className="btn btn-sm btn-primary"
               style={{ fontSize: '0.75rem', padding: '0.25rem 0.5rem', marginRight: '0.25rem', width: '70px' }}
-              onClick={() => onEditar?.(envio)}
+              onClick={() => navigate(`/editar-envio/${envio.codigoSeguimiento}`)}
             >
               Editar
             </button>

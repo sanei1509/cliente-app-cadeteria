@@ -5,6 +5,8 @@ import Register from "./pages/Register/Register.jsx";
 import Dashboard from "./pages/Dashboard/dashboard.jsx";
 import DashboardAdmin from "./pages/DashboardAdmin/DashboardAdmin.jsx";
 import RegistrarEnvio from "./pages/Dashboard/RegistrarEnvio.jsx";
+import EditarEnvio from "./pages/EditarEnvio.jsx";
+
 
 const isAuth = () => !!localStorage.getItem("token");
 const Private = ({ children }) => (isAuth() ? children : <Navigate to="/login" replace />);
@@ -22,7 +24,8 @@ const router = createBrowserRouter([
 
       { path: "dashboard", element: <Private><Dashboard /></Private> },
       { path: "dashboardAdmin", element: <Private><DashboardAdmin /></Private> },
-      { path: "envios/nuevo", element: <Private><RegistrarEnvio /></Private> }
+      { path: "envios/nuevo", element: <Private><RegistrarEnvio /></Private> },
+      { path: "editar-envio/:id", element: <Private><EditarEnvio /></Private> },
     ],
   },
 ]);

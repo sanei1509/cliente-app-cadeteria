@@ -1,7 +1,8 @@
-
-
+import { useNavigate } from "react-router-dom";
 
 const ListarEnvios = () => {
+    const navigate = useNavigate();
+
     return (
         <>
             <table className="table">
@@ -34,7 +35,24 @@ const ListarEnvios = () => {
                         <td>14:00 - 16:00</td>
                         <td>Documentos importantes</td>
                         <td>
-                            <button className="btn btn-sm btn-danger" style={{ fontSize: '0.75rem', padding: '0.25rem 0.5rem', width: '70px' }}>Cancelar</button>
+                            <button 
+                                className="btn btn-sm btn-primary" 
+                                style={{ fontSize: '0.75rem', padding: '0.25rem 0.5rem', marginRight: '0.25rem', width: '70px' }}
+                                onClick={() => navigate("/editar-envio/67123abc45def678")}
+                            >
+                                Editar
+                            </button>
+                            <button 
+                                className="btn btn-sm btn-danger" 
+                                style={{ fontSize: '0.75rem', padding: '0.25rem 0.5rem', width: '70px' }}
+                                onClick={() => {
+                                    if (window.confirm("¿Estás seguro de cancelar este envío?")) {
+                                        console.log("Cancelando envío: 67123abc45def678");
+                                    }
+                                }}
+                            >
+                                Cancelar
+                            </button>
                         </td>
                     </tr>
                     <tr>
@@ -100,8 +118,24 @@ const ListarEnvios = () => {
                         <td>13:00 - 15:00</td>
                         <td>Dirección difícil de encontrar</td>
                         <td>
-                            <button className="btn btn-sm btn-primary" style={{ fontSize: '0.75rem', padding: '0.25rem 0.5rem', marginRight: '0.25rem', width: '70px' }}>Editar</button>
-                            <button className="btn btn-sm btn-danger" style={{ fontSize: '0.75rem', padding: '0.25rem 0.5rem', width: '70px' }}>Cancelar</button>
+                            <button 
+                                className="btn btn-sm btn-primary" 
+                                style={{ fontSize: '0.75rem', padding: '0.25rem 0.5rem', marginRight: '0.25rem', width: '70px' }}
+                                onClick={() => navigate("/editar-envio/67123abc45def682")}
+                            >
+                                Editar
+                            </button>
+                            <button 
+                                className="btn btn-sm btn-danger" 
+                                style={{ fontSize: '0.75rem', padding: '0.25rem 0.5rem', width: '70px' }}
+                                onClick={() => {
+                                    if (window.confirm("¿Estás seguro de cancelar este envío?")) {
+                                        console.log("Cancelando envío: 67123abc45def682");
+                                    }
+                                }}
+                            >
+                                Cancelar
+                            </button>
                         </td>
                     </tr>
                     <tr>
@@ -139,8 +173,7 @@ const ListarEnvios = () => {
                 </tbody>
             </table>
         </>
-    )
-}
-
+    );
+};
 
 export default ListarEnvios;
