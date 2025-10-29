@@ -1,15 +1,16 @@
 // src/components/auth/FormularioLogin.jsx
 
-const FormularioLogin = ({ 
-  username, 
-  setUsername, 
-  password, 
-  setPassword, 
-  showPassword, 
+const FormularioLogin = ({
+  username,
+  setUsername,
+  password,
+  setPassword,
+  showPassword,
   setShowPassword,
   handleSubmit,
   isValid,
-  isSubmitting 
+  isSubmitting,
+  error
 }) => {
   return (
     <form className="auth-form" onSubmit={handleSubmit}>
@@ -62,6 +63,23 @@ const FormularioLogin = ({
           )}
         </button>
       </div>
+
+      {/* Mostrar mensaje de error si existe */}
+      {error && (
+        <div
+          style={{
+            padding: "0.75rem",
+            backgroundColor: "rgba(239, 68, 68, 0.1)",
+            border: "1px solid rgba(239, 68, 68, 0.3)",
+            borderRadius: "var(--radius-md)",
+            color: "#dc2626",
+            fontSize: "0.875rem",
+            marginBottom: "1rem",
+          }}
+        >
+          {error}
+        </div>
+      )}
 
       <button
         type="submit"

@@ -1,40 +1,97 @@
 import { useNavigate } from "react-router-dom";
+import { useState, useRef, useEffect } from "react";
+import { TruckIcon, LayersIcon, ChevronIcon, LogoutIcon } from "../../components/icons";
 
 const Navbar = () => {
-
     const navigate = useNavigate();
+    const [dropdownOpen, setDropdownOpen] = useState(false);
+    const dropdownRef = useRef(null);
+
+    // Obtener información del usuario desde localStorage
+    const getUserInfo = () => {
+        try {
+            const userStr = localStorage.getItem("user");
+            return userStr ? JSON.parse(userStr) : null;
+        } catch (error) {
+            console.error("Error al parsear user:", error);
+            return null;
+        }
+    };
+
+    const user = getUserInfo();
+    const userName = user?.name || user?.username || "Usuario";
+    const userPlan = user?.plan || "Free";
+
+    // Generar iniciales del nombre (primeras letras de nombre y apellido)
+    const getInitials = (name) => {
+        const parts = name.trim().split(" ");
+        if (parts.length >= 2) {
+            return (parts[0][0] + parts[1][0]).toUpperCase();
+        }
+        return name.substring(0, 2).toUpperCase();
+    };
+
+    const userInitials = getInitials(userName);
 
     const logout = () => {
         localStorage.removeItem("token");
+        localStorage.removeItem("user");
         navigate("/login");
     };
 
-    return (
+    // Cerrar dropdown al hacer click fuera
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+                setDropdownOpen(false);
+            }
+        };
 
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => {
+            document.removeEventListener("mousedown", handleClickOutside);
+        };
+    }, []);
+
+    return (
         <div className="navbar-content">
             <div className="navbar-brand">
                 <div className="navbar-brand-icon">
-                    {/* Ícono simple */}
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="white">
-                        <path d="M3 6a2 2 0 0 1 2-2h10l4 4v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6z" />
-                    </svg>
+                    <TruckIcon />
                 </div>
-                CadeteríaApp
+                <span>CadeteriaApp</span>
             </div>
 
-            <div className="navbar-menu">
-            </div>
-
-            <div className="navbar-user" /*onClick={aca la logica de solicitar cambiar de plan}*/ >
-                <span className="plan-badge" title="Pasar a plan Premium" style={{ cursor: 'pointer' }}>
-                    <svg viewBox="0 0 24 24"><path d="M12 2l4 4-4 4-4-4 4-4z" /></svg>
-                    Plan Plus
+            <div className="navbar-user" ref={dropdownRef}>
+                <span className="plan-badge" title="Plan actual">
+                    <LayersIcon />
+                    Plan {userPlan}
                 </span>
-                <div className="navbar-avatar">CM</div>
-                <button className="btn btn-ghost" onClick={logout}>Salir</button>
+                <div
+                    className="navbar-user-info"
+                    onClick={() => setDropdownOpen(!dropdownOpen)}
+                >
+                    <div className="navbar-avatar">{userInitials}</div>
+                    <span className="navbar-username">{userName}</span>
+                    <ChevronIcon
+                        style={{
+                            transform: dropdownOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+                            transition: 'transform 0.2s ease'
+                        }}
+                    />
+                </div>
+
+                {dropdownOpen && (
+                    <div className="navbar-dropdown">
+                        <button className="navbar-dropdown-item" onClick={logout}>
+                            <LogoutIcon />
+                            Cerrar sesión
+                        </button>
+                    </div>
+                )}
             </div>
         </div>
-    )
-}
+    );
+};
 
 export default Navbar;

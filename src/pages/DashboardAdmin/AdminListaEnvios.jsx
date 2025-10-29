@@ -113,37 +113,37 @@ const AdminListaEnvios = () => {
   ];
 
   return (
-    <section className="table-container">
-      <div className="card-header flex-between">
-        <div>
-          <h3 className="card-title">Todos los envíos</h3>
-        </div>
+    <section className="card">
+      <div className="card-header">
+        <h3 className="card-title">Todos los envíos</h3>
       </div>
 
       <AdminFiltros />
 
-      <table className="table">
-        <thead>
-          <tr>
-            <th>Código seguimiento</th>
-            <th>Usuario</th>
-            <th>Cliente</th>
-            <th>Origen / Destino</th>
-            <th>Categoría</th>
-            <th>Tamaño</th>
-            <th>Estado</th>
-            <th>Fecha de retiro</th>
-            <th>Hora aproximada</th>
-            <th>Notas</th>
-            <th>Acciones</th>
-          </tr>
-        </thead>
-        <tbody>
-          {envios.map((envio) => (
-            <AdminTablaEnvio key={envio.codigoSeguimiento} envio={envio} />
-          ))}
-        </tbody>
-      </table>
+      <div className="table-container table-container-no-shadow">
+        <table className="table">
+          <thead>
+            <tr>
+              <th>Código seguimiento</th>
+              <th>Usuario</th>
+              <th>Cliente</th>
+              <th>Origen / Destino</th>
+              <th>Categoría</th>
+              <th>Tamaño</th>
+              <th>Estado</th>
+              <th>Fecha de retiro</th>
+              <th>Hora aproximada</th>
+              <th>Notas</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            {envios.map((envio) => (
+              <AdminTablaEnvio key={envio.codigoSeguimiento} envio={envio} />
+            ))}
+          </tbody>
+        </table>
+      </div>
     </section>
   );
 }

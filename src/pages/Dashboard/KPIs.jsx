@@ -1,3 +1,5 @@
+import { PackageIcon, TruckIcon, CheckCircleIcon, ClockIcon, PremiumStarIcon } from "../../components/icons";
+
 const KPIs = () => {
     return(
         <>
@@ -5,9 +7,7 @@ const KPIs = () => {
             <div className="stat-header">
               <span className="stat-label">Envíos pendientes</span>
               <div className="stat-icon stat-icon-primary">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M3 6h13l4 4v8a2 2 0 0 1-2 2H3z" />
-                </svg>
+                <PackageIcon />
               </div>
             </div>
             <div className="stat-value">24</div>
@@ -18,9 +18,7 @@ const KPIs = () => {
             <div className="stat-header">
               <span className="stat-label">En tránsito</span>
               <div className="stat-icon stat-icon-info">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M2 12h20M12 2v20" />
-                </svg>
+                <TruckIcon width={20} height={20} />
               </div>
             </div>
             <div className="stat-value">42</div>
@@ -31,9 +29,7 @@ const KPIs = () => {
             <div className="stat-header">
               <span className="stat-label">Entregados (semana)</span>
               <div className="stat-icon stat-icon-success">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M20 6L9 17l-5-5" />
-                </svg>
+                <CheckCircleIcon />
               </div>
             </div>
             <div className="stat-value">128</div>
@@ -44,25 +40,18 @@ const KPIs = () => {
             <div className="stat-header">
               <span className="stat-label">Envíos pendientes</span>
               <div className="stat-icon stat-icon-warning">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M12 2l4 4-4 4-4-4 4-4z" />
-                </svg>
+                <ClockIcon />
               </div>
             </div>
             <div className="stat-value">2</div>
             <div className="stat-change" style={{ marginBottom: '0.5rem' }}>Plan Plus (máx. 5 pendientes)</div>
-            <button
-              className="btn btn-primary"
-              style={{
-                fontSize: '0.75rem',
-                padding: '0.4rem 0.8rem',
-                marginTop: '0.5rem',
-                width: '100%'
-              }}
-              title="Envíos pendientes ilimitados"
-            >
-              Pasate a Premium
-            </button>
+            <div className="plan-badge-premium" style={{ marginTop: '0.75rem', width: '100%' }}>
+              <PremiumStarIcon />
+              <div className="plan-badge-text">
+                <span className="plan-badge-title">Actualizar a Premium</span>
+                <span className="plan-badge-subtitle">*sin límite de envíos pendientes</span>
+              </div>
+            </div>
           </article>
         </>
     )
