@@ -2,6 +2,11 @@
 import Envios from "./Envios";
 import Navbar from "./Navbar";
 import KPIs from "./KPIs";
+import { getUserInfo } from "../../components/UserInfo"
+
+
+//traigo la info del usuario desde un componente
+    const user = getUserInfo();
 
 export default function Dashboard() {
   return (
@@ -14,7 +19,7 @@ export default function Dashboard() {
       <div className="dashboard-content">
         {/* Header */}
         <div className="dashboard-header">
-          <h1 className="dashboard-title">Bienvenido ${name}!</h1>
+          <h1 className="dashboard-title">{`Bienvenido ${user?.nombre?.toUpperCase()}!`}</h1>
           <p className="dashboard-subtitle">
             Aqui tienes un resumen de tus pedidos y métricas principales.
           </p>

@@ -1584,3 +1584,29 @@ a:hover {
 .password-toggle:active {
   transform: scale(0.95);
 }
+
+.navbar-user {
+  display: flex;
+  align-items: center;
+  gap: .75rem;
+}
+
+.navbar-user-info {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+}
+
+.icon-button.logout-btn {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  padding: .25rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.icon-button.logout-btn:hover {
+  opacity: 0.8; /* feedback al hover */
+}

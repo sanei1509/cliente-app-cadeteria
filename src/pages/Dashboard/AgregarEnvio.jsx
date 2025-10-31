@@ -1,5 +1,8 @@
-import { useState } from "react";
 import Modal from "./Modal";
+import { API_CESAR } from "../../api/config";
+import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+
 
 /**
  * Componente AgregarEnvio
@@ -8,62 +11,105 @@ import Modal from "./Modal";
  * El formulario se renderiza dentro de un Modal reutilizable.
  */
 const AgregarEnvio = () => {
+    const navigate = useNavigate();
     // Estado para controlar si el modal está abierto o cerrado
     const [isModalOpen, setIsModalOpen] = useState(false);
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
+    const [categorias, setCategorias] = useState([]);
+    const [catLoading, setCatLoading] = useState(true);
+    const [catError, setCatError] = useState(null);
 
-        const formData = new FormData(e.target);
 
-        const payload = {
-            origen: {
-                calle: formData.get("origenCalle"),
-                numero: formData.get("origenNumero"),
-                ciudad: formData.get("origenCiudad"),
-                referencia: formData.get("origenReferencia")
-            },
-            destino: {
-                calle: formData.get("destinoCalle"),
-                numero: formData.get("destinoNumero"),
-                ciudad: formData.get("destinoCiudad"),
-                referencia: formData.get("destinoReferencia")
-            },
-            fechaRetiro: formData.get("fechaRetiro"),
-            horaRetiroAprox: formData.get("horaRetiroAprox"),
-            tamanoPaquete: formData.get("tamanoPaquete"),
-            notas: formData.get("notas"),
-            categoria: {
-                nombre: formData.get("categoriaNombre"),
-                descripcion: formData.get("categoriaDescripcion")
+    useEffect(() => {
+        const fetchCategorias = async () => {
+            try {
+                setCatLoading(true);
+                setCatError(null);
+                const res = await fetch(`${API_CESAR}/public/v1/categories`);
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                const data = await res.json(); // esperado: [{id, name}, ...]
+                setCategorias(Array.isArray(data) ? data : []);
+            } catch (err) {
+                console.error("Error cargando categorías:", err);
+                setCatError("No se pudieron cargar las categorías.");
+            } finally {
+                setCatLoading(false);
             }
         };
+        fetchCategorias();
+    }, []);
 
-        try {
-            const token = localStorage.getItem("token");
+    const handleSubmit = async (e) => {
+  e.preventDefault();
 
-            const response = await fetch("https://api-cadeteria-ghq490feg-cesars-projects-2539e6a6.vercel.app/v1/envios", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "Authorization": `Bearer ${token}`
-                },
-                body: JSON.stringify(payload)
-            });
+  const formData = new FormData(e.target);
 
-            if (response.ok) {
-                setIsModalOpen(false);
-                // TODO: Actualizar lista de envíos
-                alert("Envío registrado exitosamente");
-            } else {
-                const errorData = await response.json();
-                alert(`Error: ${errorData.message || "No se pudo crear el envío"}`);
-            }
-        } catch (error) {
-            console.error("Error al crear envío:", error);
-            alert("Error de conexión. Por favor, intenta nuevamente.");
-        }
-    };
+  const token = localStorage.getItem("token");
+  if (!token) {
+    alert("Tu sesión expiró. Iniciá sesión nuevamente.");
+    navigate("/login");
+    return;
+  }
+
+  // ✅ obtener la categoría seleccionada por ID
+  const categoriaId = formData.get("categoriaId");
+  const categoriaSeleccionada = categorias.find(c => c.id === categoriaId);
+  if (!categoriaSeleccionada) {
+    alert("Seleccioná una categoría válida.");
+    return;
+  }
+
+  const payload = {
+    origen: {
+      calle: formData.get("origenCalle"),
+      numero: formData.get("origenNumero"),
+      ciudad: formData.get("origenCiudad"),
+      referencia: formData.get("origenReferencia")
+    },
+    destino: {
+      calle: formData.get("destinoCalle"),
+      numero: formData.get("destinoNumero"),
+      ciudad: formData.get("destinoCiudad"),
+      referencia: formData.get("destinoReferencia")
+    },
+    fechaRetiro: formData.get("fechaRetiro"),
+    horaRetiroAprox: formData.get("horaRetiroAprox"),
+    tamanoPaquete: formData.get("tamanoPaquete"),
+    notas: formData.get("notas"),
+    // ✅ la API espera objeto "categoria" con "nombre" (no id)
+    categoria: {
+      nombre: categoriaSeleccionada.name
+    }
+  };
+
+  const catDesc = formData.get("categoriaDescripcion");
+  if (catDesc) payload.categoria.descripcion = catDesc;
+
+  try {
+    const url = `${API_CESAR}/v1/envios`;
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`
+      },
+      body: JSON.stringify(payload)
+    });
+
+    if (response.ok) {
+      setIsModalOpen(false);
+      alert("Envío registrado exitosamente");
+      // TODO: refrescar lista
+    } else {
+      const errorData = await response.json().catch(() => ({}));
+      alert(`Error: ${errorData.message || "No se pudo crear el envío"}`);
+    }
+  } catch (error) {
+    console.error("Error al crear envío:", error);
+    alert("Error de conexión. Por favor, intenta nuevamente.");
+  }
+};
+
 
     return (
         <>
@@ -76,7 +122,7 @@ const AgregarEnvio = () => {
                 onClick={() => setIsModalOpen(true)}
             >
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+                    <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" />
                 </svg>
                 Nuevo Envío
             </button>
@@ -162,8 +208,38 @@ const AgregarEnvio = () => {
                         </div>
                         <div className="form-group">
                             <label className="form-label">Categoría *</label>
-                            <input name="categoriaNombre" className="form-input" placeholder="Documentos" required />
+
+                            {catError && (
+                                <div style={{ color: "var(--error-color)", fontSize: ".9rem", marginBottom: ".25rem" }}>
+                                    {catError} — <button type="button" className="btn btn-ghost btn-sm" onClick={() => {
+                                        // reintento simple
+                                        setCatLoading(true);
+                                        setCatError(null);
+                                        fetch(`${API_CESAR}/public/v1/categories`)
+                                            .then(r => r.json())
+                                            .then(d => setCategorias(Array.isArray(d) ? d : []))
+                                            .catch(() => setCatError("No se pudieron cargar las categorías."))
+                                            .finally(() => setCatLoading(false));
+                                    }}>Reintentar</button>
+                                </div>
+                            )}
+
+                            <select
+                                name="categoriaId"
+                                className="form-input"
+                                required
+                                disabled={catLoading || categorias.length === 0}
+                                defaultValue=""
+                            >
+                                <option value="" disabled>
+                                    {catLoading ? "Cargando..." : "Seleccionar categoría"}
+                                </option>
+                                {categorias.map((c) => (
+                                    <option key={c.id} value={c.id}>{c.name}</option>
+                                ))}
+                            </select>
                         </div>
+
                     </div>
 
                     <div className="form-group">

@@ -1,6 +1,7 @@
 // src/pages/Register.jsx
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { API_CESAR } from "../../api/config";
 
 export default function Register() {
   const navigate = useNavigate();
@@ -8,8 +9,8 @@ export default function Register() {
   const [form, setForm] = useState({
     fullName: "",
     username: "",
+    email: "",  
     phone: "",
-    userType: "",
     password: "",
     confirmPassword: "",
     terms: false,
@@ -19,7 +20,9 @@ export default function Register() {
 
   const onChange = (e) => {
     const { name, value, type, checked } = e.target;
-    setForm((f) => ({ ...f, [name]: type === "checkbox" ? checked : value }));
+    // opcional: normalizar email a minúsculas
+    const v = name === "email" ? value.trim().toLowerCase() : value;
+    setForm((f) => ({ ...f, [name]: type === "checkbox" ? checked : v }));
   };
 
   const validate = () => {
@@ -27,8 +30,17 @@ export default function Register() {
     if (!form.fullName.trim()) e.fullName = "Por favor ingresa tu nombre completo";
     if (!form.username.trim() || form.username.length < 3)
       e.username = "El nombre de usuario debe tener al menos 3 caracteres";
+
+    // validación de email
+    if (!form.email.trim()) {
+      e.email = "Por favor ingresa tu email";
+    } else {
+      // chequeo simple de formato
+      const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!re.test(form.email)) e.email = "Formato de email inválido";
+    }
+
     if (!form.phone.trim()) e.phone = "Por favor ingresa un teléfono válido";
-    if (!form.userType) e.userType = "Por favor selecciona un tipo de usuario";
     if (!form.password || form.password.length < 6)
       e.password = "La contraseña debe tener al menos 6 caracteres";
     if (form.password !== form.confirmPassword)
@@ -42,13 +54,93 @@ export default function Register() {
     e.preventDefault();
     if (!validate()) return;
 
-    // TODO: reemplazar con tu endpoint real (fetch/axios)
-    // Ejemplo:
-    // const res = await fetch(`${API_URL}/auth/register`, { method: 'POST', body: JSON.stringify(form) ... })
-    // if (!res.ok) { manejar error }
-    // Al éxito:
-    localStorage.setItem("token", "demo-token");
-    navigate("/dashboard");
+    // Separar nombre y apellido
+    const [nombre, ...resto] = form.fullName.trim().split(" ");
+    const apellido = resto.length ? resto.join(" ") : "-";
+
+    try {
+      const res = await fetch(`${API_CESAR}/public/v1/signup`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          username: form.username,
+          password: form.password,
+          nombre,
+          apellido,
+          email: form.email,
+        }),
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        alert(`Error de registro: ${err.message || res.statusText}`);
+        return;
+      }
+
+      const data = await res.json();
+      console.log("Respuesta completa del servidor:", data);
+      console.log("Tipo de data:", typeof data);
+      console.log("Keys de data:", Object.keys(data));
+
+      // Intentar extraer token y usuario de diferentes estructuras posibles
+      let tokenStr, userObj;
+
+      // Caso 1: { token: { token: "...", user: {...} } }
+      if (data?.token?.token && data?.token?.user) {
+        tokenStr = data.token.token;
+        userObj = data.token.user;
+        console.log("✅ Estructura correcta detectada (con wrapper token)");
+      }
+      // Caso 2: Respuesta directa del usuario (sin token) - hacer login manual
+      else if (data?.id && data?.username) {
+        console.log("⚠️ Solo datos de usuario, haciendo login automático...");
+        
+        try {
+          const loginRes = await fetch(`${API_CESAR}/public/v1/login`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              username: form.username,
+              password: form.password,
+            }),
+          });
+
+          if (!loginRes.ok) {
+            alert("Registro exitoso. Por favor, inicia sesión manualmente.");
+            navigate("/login");
+            return;
+          }
+
+          const loginData = await loginRes.json();
+          console.log("Respuesta del login:", loginData);
+
+          tokenStr = loginData?.token?.token;
+          userObj = loginData?.token?.user;
+        } catch (loginError) {
+          console.error("Error en login automático:", loginError);
+          alert("Registro exitoso. Por favor, inicia sesión manualmente.");
+          navigate("/login");
+          return;
+        }
+      }
+
+      console.log("Token final:", tokenStr);
+      console.log("Usuario final:", userObj);
+
+      if (tokenStr && userObj) {
+        localStorage.setItem("token", tokenStr);
+        localStorage.setItem("user", JSON.stringify(userObj));
+        console.log("✅ Login automático exitoso");
+        navigate("/dashboard");
+      } else {
+        console.error("❌ No se pudo extraer token o usuario");
+        alert("Registro exitoso. Por favor, inicia sesión manualmente.");
+        navigate("/login");
+      }
+    } catch (error) {
+      console.error("Error al registrar usuario:", error);
+      alert("Error de conexión. Intentá nuevamente.");
+    }
   };
 
   return (
@@ -101,6 +193,22 @@ export default function Register() {
           </div>
 
           <div className="form-group">
+            <label htmlFor="email" className="form-label">Email</label>
+            <input
+              type="email"
+              id="email"
+              name="email"
+              className="form-input"
+              placeholder="tu@email.com"
+              required
+              autoComplete="email"
+              value={form.email}
+              onChange={onChange}
+            />
+            <span className="form-error">{errors.email}</span>
+          </div>
+
+          <div className="form-group">
             <label htmlFor="phone" className="form-label">Teléfono</label>
             <input
               type="tel"
@@ -114,24 +222,6 @@ export default function Register() {
               onChange={onChange}
             />
             <span className="form-error">{errors.phone}</span>
-          </div>
-
-          <div className="form-group">
-            <label htmlFor="userType" className="form-label">Tipo de Usuario</label>
-            <select
-              id="userType"
-              name="userType"
-              className="form-select"
-              required
-              value={form.userType}
-              onChange={onChange}
-            >
-              <option value="">Selecciona una opción</option>
-              <option value="client">Cliente - Solicitar envíos</option>
-              <option value="messenger">Mensajero - Realizar envíos</option>
-              <option value="business">Empresa - Gestionar envíos</option>
-            </select>
-            <span className="form-error">{errors.userType}</span>
           </div>
 
           <div className="form-group">

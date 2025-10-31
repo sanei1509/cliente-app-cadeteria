@@ -2,24 +2,28 @@
 import { useNavigate } from "react-router-dom";
 import { useState, useRef, useEffect } from "react";
 import { TruckIcon, StarIcon, ChevronIcon, LogoutIcon } from "../../components/icons";
+import { getUserInfo } from "../../components/UserInfo"
+
 
 const AdminNavbar = () => {
   const navigate = useNavigate();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
 
-  // Obtener información del usuario desde localStorage
-  const getUserInfo = () => {
-    try {
-      const userStr = localStorage.getItem("user");
-      return userStr ? JSON.parse(userStr) : null;
-    } catch (error) {
-      console.error("Error al parsear user:", error);
-      return null;
-    }
-  };
+  
+//traigo la info del usuario desde un componente
+    const user = getUserInfo();
 
-  const user = getUserInfo();
+  // const getUserInfo = () => {
+  //   try {
+  //     const userStr = localStorage.getItem("user");
+  //     return userStr ? JSON.parse(userStr) : null;
+  //   } catch (error) {
+  //     console.error("Error al parsear user:", error);
+  //     return null;
+  //   }
+  // };
+
   const userName = user?.name || user?.username || "Admin";
 
   // Generar iniciales del nombre
