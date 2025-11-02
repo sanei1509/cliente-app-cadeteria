@@ -88,29 +88,43 @@ const AgregarEnvio = () => {
   const catDesc = formData.get("categoriaDescripcion");
   if (catDesc) payload.categoria.descripcion = catDesc;
 
-  try {
-    const url = `${API_CESAR}/v1/envios`;
-    const response = await fetch(url, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${token}`
-      },
-      body: JSON.stringify(payload)
-    });
+  const url = `${API_CESAR}/v1/envios`;
 
-    if (response.ok) {
-      setIsModalOpen(false);
-      alert("Envío registrado exitosamente");
-      dispatch(addEnvio(data));
-    } else {
-      const errorData = await response.json().catch(() => ({}));
-      alert(`Error: ${errorData.message || "No se pudo crear el envío"}`);
+fetch(url, {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+    Authorization: `Bearer ${token}`,
+  },
+  body: JSON.stringify(payload),
+})
+  .then((res) => {
+    if (!res.ok) {
+      // Levanto el error del body si existe
+      return res.json().catch(() => ({})).then((err) => {
+        const msg = err?.message || res.statusText || "No se pudo crear el envío";
+        throw new Error(msg);
+      });
     }
-  } catch (error) {
+    return res.json(); // ✅ acá obtengo el nuevo envío creado por la API
+  })
+  .then((nuevoEnvio) => {
+    // ✅ Actualizo Redux para que ListarEnvios se re-renderice
+    dispatch(addEnvio(nuevoEnvio)); 
+
+    // opcional: cerrar modal y avisar
+    setIsModalOpen(false);
+    alert("Envío registrado exitosamente");
+  })
+  .catch((error) => {
     console.error("Error al crear envío:", error);
-    alert("Error de conexión. Por favor, intenta nuevamente.");
-  }
+    alert(`Error: ${error.message || "Error de conexión. Intentá nuevamente."}`);
+  })
+  .finally(() => {
+    // si tenés algún spinner/botón deshabilitado, liberalo acá
+    // setIsSubmitting(false);
+  });
+
 };
 
 

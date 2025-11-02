@@ -9,7 +9,7 @@ const Envios = () => {
             <AgregarEnvio />
           </div>
 
-          <Filtros />
+          {/* <Filtros /> */}
 
           <div className="table-container table-container-no-shadow">
             <ListarEnvios />
