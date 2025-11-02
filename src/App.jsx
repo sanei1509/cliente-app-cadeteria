@@ -1,8 +1,10 @@
 import { BrowserRouter, Routes, Route, Navigate, Outlet, Link } from "react-router-dom";
 import Login from "./pages/Login/Login.jsx";
 import Register from "./pages/Register/Register.jsx";
+import { store } from './store/store';
 import Dashboard from "./pages/Dashboard/dashboard.jsx";
 import DashboardAdmin from "./pages/DashboardAdmin/DashboardAdmin.jsx";
+import { Provider } from 'react-redux';
 
 // Componente para proteger rutas privadas
 const Private = ({ children }) => {
@@ -47,6 +49,8 @@ function Layout() {
 // Componente principal con todas las rutas
 export default function App() {
   return (
+    <Provider store={store}>
+
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<Layout />}>
@@ -60,5 +64,7 @@ export default function App() {
         </Route>
       </Routes>
     </BrowserRouter>
+
+    </Provider>
   );
 }

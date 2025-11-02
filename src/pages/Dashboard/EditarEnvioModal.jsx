@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import Modal from "./Modal";
-import { API_SANTI } from "../../api/config";
+import { API_CESAR, API_SANTI } from "../../api/config";
 
 /**
  * Modal para editar un envío existente
@@ -27,7 +27,6 @@ const EditarEnvioModal = ({ isOpen, onClose, envioId, onSuccess }) => {
     notas: "",
     categoriaNombre: "",
     categoriaDescripcion: "",
-    estado: "",
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -44,7 +43,7 @@ const EditarEnvioModal = ({ isOpen, onClose, envioId, onSuccess }) => {
     setIsLoading(true);
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch(`${API_SANTI}/v1/envios/${envioId}`, {
+      const response = await fetch(`${API_CESAR}/v1/envios/${envioId}`, {
         method: "GET",
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -65,7 +64,6 @@ const EditarEnvioModal = ({ isOpen, onClose, envioId, onSuccess }) => {
           tamanoPaquete: data.tamanoPaquete,
           notas: data.notas || "",
           categoriaNombre: data.categoria,
-          estado: data.estado,
         });
       } else {
         alert("Error al cargar los datos del envío");
@@ -137,7 +135,6 @@ const EditarEnvioModal = ({ isOpen, onClose, envioId, onSuccess }) => {
       if (formData.tamanoPaquete)
         payload.tamanoPaquete = formData.tamanoPaquete;
       if (formData.notas) payload.notas = formData.notas;
-      if (formData.estado) payload.estado = formData.estado;
 
       // Categoría
       if (formData.categoriaNombre || formData.categoriaDescripcion) {
@@ -148,7 +145,7 @@ const EditarEnvioModal = ({ isOpen, onClose, envioId, onSuccess }) => {
           payload.categoria.descripcion = formData.categoriaDescripcion;
       }
 
-      const response = await fetch(`${API_SANTI}/v1/envios/${envioId}`, {
+      const response = await fetch(`${API_CESAR}/v1/envios/${envioId}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -188,41 +185,6 @@ const EditarEnvioModal = ({ isOpen, onClose, envioId, onSuccess }) => {
         </div>
       ) : (
         <form onSubmit={handleSubmit}>
-          {/* Estado */}
-          <div
-            style={{
-              marginBottom: "1.5rem",
-              padding: "1rem",
-              background: "var(--background)",
-              borderRadius: "var(--radius-md)",
-            }}
-          >
-            <h3
-              style={{
-                marginBottom: "0.75rem",
-                fontSize: "1rem",
-                fontWeight: "600",
-              }}
-            >
-              ⚡ Estado del Envío
-            </h3>
-            <div className="form-group">
-              <label className="form-label">Estado</label>
-              <select
-                name="estado"
-                className="form-input"
-                value={formData.estado}
-                onChange={handleChange}
-              >
-                <option value="">-- No modificar --</option>
-                <option value="pendiente">Pendiente</option>
-                <option value="en_ruta">En Ruta</option>
-                <option value="entregado">Entregado</option>
-                <option value="cancelado">Cancelado</option>
-              </select>
-            </div>
-          </div>
-
           {/* Origen */}
           <div style={{ marginBottom: "1.5rem" }}>
             <h3

@@ -2,7 +2,8 @@ import Modal from "./Modal";
 import { API_CESAR } from "../../api/config";
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
-
+import { addEnvio } from "../../features/enviosSlice";
+import { useDispatch} from "react-redux";
 
 /**
  * Componente AgregarEnvio
@@ -12,12 +13,14 @@ import { useState, useEffect } from "react";
  */
 const AgregarEnvio = () => {
     const navigate = useNavigate();
+    const dispatch = useDispatch();
     // Estado para controlar si el modal está abierto o cerrado
     const [isModalOpen, setIsModalOpen] = useState(false);
 
     const [categorias, setCategorias] = useState([]);
     const [catLoading, setCatLoading] = useState(true);
     const [catError, setCatError] = useState(null);
+    
 
 
     useEffect(() => {
@@ -99,7 +102,7 @@ const AgregarEnvio = () => {
     if (response.ok) {
       setIsModalOpen(false);
       alert("Envío registrado exitosamente");
-      // TODO: refrescar lista
+      dispatch(addEnvio(data));
     } else {
       const errorData = await response.json().catch(() => ({}));
       alert(`Error: ${errorData.message || "No se pudo crear el envío"}`);
