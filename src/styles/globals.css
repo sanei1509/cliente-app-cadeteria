@@ -823,43 +823,136 @@ a:hover {
   background: var(--surface);
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-sm);
-  overflow-x: auto;
+  overflow-x: auto;   /* red de seguridad por si el viewport es muy chico */
   overflow-y: visible;
 }
 
 .table {
   width: 100%;
   border-collapse: collapse;
-  min-width: 1000px;
+  table-layout: fixed;   /* reparte ancho y evita empujes */
+  min-width: 0;
 }
 
-.table thead {
-  background: var(--background);
-}
+.table thead { background: var(--background); }
 
+/* Encabezados: centrados y SIN cortar palabras */
 .table th {
   padding: var(--spacing-sm) var(--spacing-md);
-  text-align: left;
+  text-align: center;           /* centrado */
+  vertical-align: middle;
   font-size: var(--font-size-sm);
   font-weight: 600;
   color: var(--text-secondary);
   text-transform: uppercase;
   letter-spacing: 0.5px;
+  white-space: normal;          /* permite salto entre palabras */
+  word-break: keep-all;         /* NO cortar palabras */
+  overflow-wrap: normal;        /* evita cortes agresivos */
 }
 
 .table td {
   padding: var(--spacing-md);
   border-top: 1px solid var(--border-color);
   font-size: var(--font-size-sm);
+  text-align: left;             /* datos alineados a la izquierda por defecto */
+  white-space: normal;          /* salto entre palabras */
+  word-break: keep-all;         /* NO cortar palabras */
+  overflow-wrap: normal;
 }
 
-.table tbody tr {
-  transition: background var(--transition-fast);
+/* Hover fila */
+.table tbody tr { transition: background var(--transition-fast); }
+.table tbody tr:hover { background: var(--background); }
+
+/* Sugerencia de ancho para 1) Código y 2) Usuario */
+.table th:nth-child(1), .table td:nth-child(1) { width: 15ch; }  /* Código seguimiento */
+.table th:nth-child(2), .table td:nth-child(2) { width: 14ch; }  /* Usuario */
+
+/* No cortar datos en 1) Código y 2) Usuario (solo TD) */
+.table td:nth-child(1),
+.table td:nth-child(2) {
+  white-space: nowrap;
+  text-align: center;           /* centra también los datos de estas dos columnas */
 }
 
-.table tbody tr:hover {
-  background: var(--background);
+/* Opcional: si querés centrar TODOS los headers y datos de las 2 primeras columnas */
+.table th:nth-child(1),
+.table th:nth-child(2) {
+  text-align: center;
 }
+
+/* Notas: elipsis para no ensanchar */
+.col-notas {
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Utilidad: solo si alguna celda trae un token MUY largo sin espacios (hash/URL)
+   y querés que igual se quiebre.
+   Agregá className="break-anywhere" en esa TD puntual. */
+.break-anywhere {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+/* === Notas: vista truncada + tooltip completo al hover === */
+
+.col-notas {
+  position: relative;
+  max-width: 200px;   /* ajustá si querés más ancho de columna */
+  overflow: visible;  /* permite que el tooltip “salga” de la celda */
+}
+
+.note-clip {
+  display: block;
+  max-width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;  /* elipsis en la vista */
+}
+
+.note-tooltip {
+  position: relative;
+  cursor: default;   /* o 'inherit' */
+}
+
+
+/* Burbuja del tooltip */
+.note-tooltip:hover::after {
+  content: attr(data-tip);
+  position: absolute;
+  left: 0;                /* usá right: 0; si querés alinearlo al borde derecho */
+  top: 100%;
+  margin-top: 6px;
+  z-index: 1000;
+  max-width: 420px;
+  white-space: pre-wrap;  /* respeta \n del backend */
+  line-height: 1.35;
+  font-size: 0.85rem;
+  color: var(--text-primary, #2C3E50);
+  background: var(--surface, #fff);
+  border: 1px solid var(--border-color, #E1E8ED);
+  box-shadow: var(--shadow-md, 0 4px 12px rgba(0,0,0,.08));
+  border-radius: 8px;
+  padding: 8px 10px;
+}
+
+/* Flechita del tooltip */
+.note-tooltip:hover::before {
+  content: "";
+  position: absolute;
+  left: 10px;            /* si usás right: 0 arriba, poné right: 10px acá */
+  top: calc(100% + 2px);
+  border: 6px solid transparent;
+  border-bottom-color: var(--surface, #fff);
+  transform: translateY(-100%);
+  z-index: 1001;
+}
+
+
 
 /* ============================================
    DASHBOARD LAYOUTS - Ready for React Components
@@ -1609,4 +1702,58 @@ a:hover {
 
 .icon-button.logout-btn:hover {
   opacity: 0.8; /* feedback al hover */
+}
+
+/* Usuario en tabla: ID + icono a la derecha */
+.user-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  white-space: nowrap;
+}
+
+.user-code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  font-size: 0.9rem;
+  letter-spacing: 0.15px;
+}
+
+/* Botón del icono (ghost, sutil) */
+.icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  border: 1px solid rgba(107,114,128,0.30); /* gris tenue */
+  background: transparent;
+  color: var(--text-secondary, #6b7280);
+  transition: background 120ms ease, color 120ms ease, border-color 120ms ease;
+  cursor: pointer;
+}
+
+.icon-btn:hover {
+  background: rgba(107,114,128,0.08);
+  color: var(--text-primary, #111827);
+  border-color: rgba(107,114,128,0.5);
+}
+
+/* Estado "Copiado" */
+.icon-btn.ok {
+  color: #166534; /* verde oscuro sutil */
+  border-color: rgba(22,163,74,0.35);
+  background: rgba(22,163,74,0.10);
+}
+
+/* SVG del portapapeles */
+.icon-clipboard {
+  width: 14px;
+  height: 14px;
+  stroke: currentColor; /* hereda el color */
+  fill: none;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  opacity: 0.9;
 }

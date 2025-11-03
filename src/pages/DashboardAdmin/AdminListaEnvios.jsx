@@ -1,151 +1,183 @@
-// src/components/admin/AdminListaEnvios.jsx
+import { useState, useEffect, useMemo } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import { useNavigate } from 'react-router-dom';
+import { setEnvios, setEnviosLoading } from '../../features/enviosSlice';
+import { API_CESAR } from '../../api/config';
 import AdminFiltros from './AdminFiltros';
 import AdminTablaEnvio from './AdminTablaEnvio';
 
+function getUserIdFromEnvio(envio) {
+  // Puede venir como string o como objeto con _id/id, o campo userId
+  if (!envio) return "";
+  const u = envio.user;
+  if (typeof u === "string") return u;
+  if (u && typeof u === "object") return u._id || u.id || "";
+  return envio.userId || "";
+}
+
 const AdminListaEnvios = () => {
-  // Datos hardcodeados de ejemplo
-  const envios = [
-    {
-      codigoSeguimiento: 'TRK-001-2025',
-      username: 'usuario1',
-      cliente: 'Juan Pérez',
-      origen: 'Montevideo',
-      destino: 'Canelones',
-      categoria: 'Documentos',
-      tamano: 'Chico',
-      estado: 'Pendiente',
-      estadoColor: 'warning',
-      estadoValue: 'pendiente',
-      fechaRetiro: '25/10/2025',
-      horaAprox: '14:00 - 16:00',
-      notas: 'Documentos importantes'
-    },
-    {
-      codigoSeguimiento: 'TRK-002-2025',
-      username: 'maria_g',
-      cliente: 'María González',
-      origen: 'Montevideo',
-      destino: 'Punta del Este',
-      categoria: 'Electrónicos',
-      tamano: 'Mediano',
-      estado: 'En ruta',
-      estadoColor: 'info',
-      estadoValue: 'en_ruta',
-      fechaRetiro: '25/10/2025',
-      horaAprox: '10:00 - 12:00',
-      notas: 'Frágil - manejar con cuidado'
-    },
-    {
-      codigoSeguimiento: 'TRK-003-2025',
-      username: 'carlos_r',
-      cliente: 'Carlos Rodríguez',
-      origen: 'Maldonado',
-      destino: 'Montevideo',
-      categoria: 'Paquetería',
-      tamano: 'Grande',
-      estado: 'Entregado',
-      estadoColor: 'success',
-      estadoValue: 'entregado',
-      fechaRetiro: '24/10/2025',
-      horaAprox: '09:00 - 11:00',
-      notas: '-'
-    },
-    {
-      codigoSeguimiento: 'TRK-004-2025',
-      username: 'ana_m',
-      cliente: 'Ana Martínez',
-      origen: 'Colonia',
-      destino: 'Montevideo',
-      categoria: 'Documentos',
-      tamano: 'Chico',
-      estado: 'En ruta',
-      estadoColor: 'info',
-      estadoValue: 'en_ruta',
-      fechaRetiro: '25/10/2025',
-      horaAprox: '15:00 - 17:00',
-      notas: 'Llamar antes de entregar'
-    },
-    {
-      codigoSeguimiento: 'TRK-005-2025',
-      username: 'roberto_s',
-      cliente: 'Roberto Silva',
-      origen: 'Montevideo',
-      destino: 'Salto',
-      categoria: 'Paquetería',
-      tamano: 'Mediano',
-      estado: 'Pendiente',
-      estadoColor: 'warning',
-      estadoValue: 'pendiente',
-      fechaRetiro: '26/10/2025',
-      horaAprox: '13:00 - 15:00',
-      notas: 'Dirección difícil de encontrar'
-    },
-    {
-      codigoSeguimiento: 'TRK-006-2025',
-      username: 'laura_f',
-      cliente: 'Laura Fernández',
-      origen: 'Paysandú',
-      destino: 'Montevideo',
-      categoria: 'Documentos',
-      tamano: 'Chico',
-      estado: 'Entregado',
-      estadoColor: 'success',
-      estadoValue: 'entregado',
-      fechaRetiro: '24/10/2025',
-      horaAprox: '11:00 - 13:00',
-      notas: 'Firmado por portería'
-    },
-    {
-      codigoSeguimiento: 'TRK-007-2025',
-      username: 'diego_m',
-      cliente: 'Diego Martín',
-      origen: 'Montevideo',
-      destino: 'Rivera',
-      categoria: 'Electrónicos',
-      tamano: 'Grande',
-      estado: 'Cancelado',
-      estadoColor: 'secondary',
-      estadoValue: 'cancelado',
-      fechaRetiro: '25/10/2025',
-      horaAprox: '16:00 - 18:00',
-      notas: 'Cliente solicitó cancelación'
+  const [error, setError] = useState(null);
+  const [filtroFecha, setFiltroFecha] = useState('historico');
+  const [filtroEstado, setFiltroEstado] = useState('todos');
+  const [filtroTamano, setFiltroTamano] = useState('todos');
+  const [filtroUsuarioId, setFiltroUsuarioId] = useState(''); // << NUEVO
+
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+
+  const envios = useSelector((s) => s.envios.envios);
+  const isLoading = useSelector((s) => s.envios.areEnviosLoading);
+
+  // Cargar envíos cuando cambian los filtros
+  useEffect(() => {
+    cargarEnvios();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filtroFecha, filtroEstado, filtroTamano, filtroUsuarioId]);
+
+  const cargarEnvios = () => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      navigate("/login");
+      return;
     }
-  ];
+
+    const params = new URLSearchParams();
+
+    // Filtro de estado
+    if (filtroEstado !== 'todos') {
+      params.set('estado', filtroEstado);
+    }
+    // Filtro de tamaño
+    if (filtroTamano !== 'todos') {
+      params.set('tamanoPaquete', filtroTamano);
+    }
+    // Filtro de fecha
+    if (filtroFecha === 'semana') {
+      params.set('ultimos', 'semana');
+    } else if (filtroFecha === 'mes') {
+      params.set('ultimos', 'mes');
+    }
+    // Filtro por usuario (server-side si tu API lo soporta)
+    const userIdTrim = filtroUsuarioId.trim();
+    if (userIdTrim) {
+      // Pongo ambos por compatibilidad (tu back usa "user" en el modelo)
+      params.set('userId', userIdTrim);
+      params.set('user', userIdTrim);
+    }
+
+    dispatch(setEnviosLoading(true));
+    setError(null);
+
+    fetch(`${API_CESAR}/v1/envios?${params.toString()}`, {
+      method: "GET",
+      headers: { 
+        authorization: `Bearer ${token}` 
+      },
+    })
+      .then((response) => {
+        if (response.ok) return response.json();
+        if (response.status === 401) throw new Error("UNAUTHORIZED");
+        throw new Error("Error al cargar envíos");
+      })
+      .then((data) => {
+        dispatch(setEnvios(data));
+      })
+      .catch((e) => {
+        if (e.message === "UNAUTHORIZED") {
+          localStorage.clear();
+          navigate("/login");
+        } else {
+          setError(e.message || "Error de conexión");
+        }
+      })
+      .finally(() => dispatch(setEnviosLoading(false)));
+  };
+
+  // Pre-filtrado por ID de usuario (client-side fallback si el back no filtra)
+  const preFiltrados = useMemo(() => {
+    if (!Array.isArray(envios)) return [];
+    const needle = (filtroUsuarioId || "").trim().toLowerCase();
+    if (!needle) return envios;
+
+    return envios.filter((e) => {
+      const uid = getUserIdFromEnvio(e).toLowerCase();
+      // Incluyo contains para permitir buscar por los primeros 8 caracteres
+      return uid.includes(needle);
+    });
+  }, [envios, filtroUsuarioId]);
+
+  // Ordenar envíos: más recientes primero
+  const sortedEnvios = useMemo(() => {
+    const getDate = (e) => new Date(e.fechaRetiro || e.fechaCreacion || e.createdAt || 0);
+    return preFiltrados.slice().sort((a, b) => getDate(b) - getDate(a));
+  }, [preFiltrados]);
 
   return (
     <section className="card">
       <div className="card-header">
         <h3 className="card-title">Todos los envíos</h3>
+        <p className="card-subtitle" style={{ marginTop: '0.5rem', color: 'var(--text-secondary)' }}>
+          Total: {sortedEnvios.length} envío{sortedEnvios.length !== 1 ? 's' : ''}
+        </p>
       </div>
 
-      <AdminFiltros />
+      <AdminFiltros 
+        filtroFecha={filtroFecha}
+        filtroEstado={filtroEstado}
+        filtroTamano={filtroTamano}
+        filtroUsuarioId={filtroUsuarioId}            // << NUEVO
+        onChangeFecha={setFiltroFecha}
+        onChangeEstado={setFiltroEstado}
+        onChangeTamano={setFiltroTamano}
+        onChangeUsuarioId={setFiltroUsuarioId}       // << NUEVO
+      />
 
-      <div className="table-container table-container-no-shadow">
-        <table className="table">
-          <thead>
-            <tr>
-              <th>Código seguimiento</th>
-              <th>Usuario</th>
-              <th>Cliente</th>
-              <th>Origen / Destino</th>
-              <th>Categoría</th>
-              <th>Tamaño</th>
-              <th>Estado</th>
-              <th>Fecha de retiro</th>
-              <th>Hora aproximada</th>
-              <th>Notas</th>
-              <th>Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            {envios.map((envio) => (
-              <AdminTablaEnvio key={envio.codigoSeguimiento} envio={envio} />
-            ))}
-          </tbody>
-        </table>
-      </div>
+      {isLoading && (
+        <div style={{ padding: "2rem", textAlign: "center" }}>
+          <p>Cargando envíos...</p>
+        </div>
+      )}
+
+      {error && (
+        <div style={{ padding: "1rem", color: "#dc2626", textAlign: "center" }}>
+          {error}
+        </div>
+      )}
+
+      {!isLoading && !error && sortedEnvios.length === 0 && (
+        <div style={{ padding: "2rem", textAlign: "center", color: "var(--text-secondary)" }}>
+          <p>No hay envíos que coincidan con los filtros seleccionados.</p>
+        </div>
+      )}
+
+      {!isLoading && !error && sortedEnvios.length > 0 && (
+        <div className="table-container table-container-no-shadow">
+          <table className="table">
+            <thead>
+              <tr>
+                <th>Código seguimiento</th>
+                <th>Usuario</th>
+                <th>Cliente</th>
+                <th>Origen / Destino</th>
+                <th>Categoría</th>
+                <th>Tamaño</th>
+                <th>Estado</th>
+                <th>Fecha de retiro</th>
+                <th>Hora aproximada</th>
+                <th>Notas</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              {sortedEnvios.map((envio) => (
+                <AdminTablaEnvio key={envio.id} envio={envio} />
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </section>
   );
-}
+};
 
 export default AdminListaEnvios;
