@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { addEnvio } from "../../features/enviosSlice";
 import { useDispatch} from "react-redux";
+import { toast } from 'react-toastify';
 
 /**
  * Componente AgregarEnvio
@@ -30,10 +31,9 @@ const AgregarEnvio = () => {
                 setCatError(null);
                 const res = await fetch(`${API_CESAR}/public/v1/categories`);
                 if (!res.ok) throw new Error(`HTTP ${res.status}`);
-                const data = await res.json(); // esperado: [{id, name}, ...]
+                const data = await res.json();
                 setCategorias(Array.isArray(data) ? data : []);
             } catch (err) {
-                console.error("Error cargando categorías:", err);
                 setCatError("No se pudieron cargar las categorías.");
             } finally {
                 setCatLoading(false);
@@ -49,7 +49,7 @@ const AgregarEnvio = () => {
 
   const token = localStorage.getItem("token");
   if (!token) {
-    alert("Tu sesión expiró. Iniciá sesión nuevamente.");
+    toast.error("Tu sesión expiró. Iniciá sesión nuevamente.");
     navigate("/login");
     return;
   }
@@ -58,7 +58,7 @@ const AgregarEnvio = () => {
   const categoriaId = formData.get("categoriaId");
   const categoriaSeleccionada = categorias.find(c => c.id === categoriaId);
   if (!categoriaSeleccionada) {
-    alert("Seleccioná una categoría válida.");
+    toast.error("Seleccioná una categoría válida.");
     return;
   }
 
@@ -114,17 +114,11 @@ fetch(url, {
 
     // opcional: cerrar modal y avisar
     setIsModalOpen(false);
-    alert("Envío registrado exitosamente");
+    toast.success("Envío registrado exitosamente");
   })
   .catch((error) => {
-    console.error("Error al crear envío:", error);
-    alert(`Error: ${error.message || "Error de conexión. Intentá nuevamente."}`);
-  })
-  .finally(() => {
-    // si tenés algún spinner/botón deshabilitado, liberalo acá
-    // setIsSubmitting(false);
+    toast.error(`Error: ${error.message || "Error de conexión. Intentá nuevamente."}`);
   });
-
 };
 
 

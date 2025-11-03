@@ -1,12 +1,27 @@
 import { PackageIcon, TruckIcon, CheckCircleIcon, ClockIcon, PremiumStarIcon } from "../../components/icons";
-import { getUserInfo } from "../../components/UserInfo";
-
-const user = getUserInfo();
-const userPlan = (user?.plan || "plus").toLowerCase();
+import { useState } from "react";
+import { useSelector } from "react-redux";
+import { selectUserPlan } from "../../features/userSlice";
+import UpgradePlanModal from "../../components/UpgradePlanModal";
 
 const KPIs = () => {
+  const [upgradeModalOpen, setUpgradeModalOpen] = useState(false);
+
+  // Obtener plan del usuario desde Redux
+  const userPlan = useSelector(selectUserPlan);
+  const plan = userPlan.toLowerCase();
+
+  const handleUpgradeSuccess = () => {
+    setUpgradeModalOpen(false);
+  };
+
   return (
     <>
+      <UpgradePlanModal
+        isOpen={upgradeModalOpen}
+        onClose={() => setUpgradeModalOpen(false)}
+        onUpgradeSuccess={handleUpgradeSuccess}
+      />
       <article className="stat-card">
         <div className="stat-header">
           <span className="stat-label">Envíos pendientes</span>
@@ -49,13 +64,20 @@ const KPIs = () => {
         </div>
         <div className="stat-value">2</div>
         {/* Mostrar solo si el plan es PLUS */}
-        {(userPlan || "").toLowerCase() === "plus" && (
+        {plan === "plus" && (
           <>
             <div className="stat-change" style={{ marginBottom: '0.5rem' }}>
               Plan Plus (máx. 5 pendientes)
             </div>
 
-            <div className="plan-badge-premium" style={{ marginTop: '0.75rem', width: '100%' }}>
+            <div
+              className="plan-badge-premium"
+              style={{ marginTop: '0.75rem', width: '100%', cursor: 'pointer' }}
+              onClick={() => setUpgradeModalOpen(true)}
+              role="button"
+              tabIndex={0}
+              onKeyPress={(e) => e.key === 'Enter' && setUpgradeModalOpen(true)}
+            >
               <PremiumStarIcon />
               <div className="plan-badge-text">
                 <span className="plan-badge-title">Actualizar a Premium</span>

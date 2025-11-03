@@ -121,8 +121,7 @@ const ListarEnvios = () => {
           dispatch(updateEnvio({ id, updatedEnvio: { estado: "cancelado" } }));
         }
       })
-      .catch((error) => {
-        console.error("Error al cancelar envío:", error);
+      .catch(() => {
         alert("Error de conexión. Intentá nuevamente.");
       })
       .finally(() => {
@@ -285,14 +284,6 @@ function isEnvioEditable(fechaEnvio) {
   const tomorrow = new Date(today);
   tomorrow.setDate(tomorrow.getDate() + 1);
   return envio >= tomorrow;
-}
-
-function parseHoraToMinutes(hhmm) {
-  if (!hhmm || typeof hhmm !== "string") return Number.MAX_SAFE_INTEGER;
-  const m = hhmm.match(/^(\d{1,2}):(\d{2})$/);
-  if (!m) return Number.MAX_SAFE_INTEGER;
-  const hh = Number(m[1]), mm = Number(m[2]);
-  return hh * 60 + mm;
 }
 
 export default ListarEnvios;

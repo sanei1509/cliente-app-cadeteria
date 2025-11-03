@@ -1,13 +1,17 @@
 // src/pages/Login.jsx
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
+import { useDispatch } from "react-redux";
+import { setUser } from "../../features/userSlice";
 import Logo from "./Logo";
 import FormularioLogin from "./FormularioLogin";
 import { API_SANTI } from "../../api/config";
 import { API_CESAR } from "../../api/config";
+import { toast } from 'react-toastify';
 
 const Login = () => {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
 
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -25,10 +29,8 @@ const Login = () => {
     setError(""); // Limpiar errores anteriores
 
     try {
-      // Petición al endpoint de login
       const response = await fetch(
-        // "https://apicadeteria-m0l7xry84-cesars-projects-2539e6a6.vercel.app/public/v1/login",
-        `${API_CESAR}/public/v1/login`,
+        `${API_SANTI}/public/v1/loginReal`,
         {
           method: "POST",
           headers: {
@@ -44,13 +46,19 @@ const Login = () => {
       if (response.ok) {
         const data = await response.json();
 
+        // Limpiar localStorage antes de guardar nuevos datos
+        localStorage.clear();
+
         // Guardar el token en localStorage
         localStorage.setItem("token", data.token?.token);
 
-        // Guardar datos del usuario
+        // Guardar datos del usuario en Redux (automáticamente sincroniza con localStorage)
         if (data.token?.user) {
-          localStorage.setItem("user", JSON.stringify(data.token?.user));
+          dispatch(setUser(data.token?.user));
         }
+
+        // Mostrar toast de éxito
+        toast.success("¡Bienvenido! Inicio de sesión exitoso");
 
         // Redirigir según el rol del usuario
         const role = data.token?.user?.role;
@@ -62,11 +70,14 @@ const Login = () => {
       } else {
         // Manejar errores de autenticación
         const errorData = await response.json();
-        setError(errorData.message || "Credenciales incorrectas");
+        const errorMsg = errorData.message || "Credenciales incorrectas";
+        setError(errorMsg);
+        toast.error(errorMsg);
       }
     } catch (error) {
-      console.error("Error al iniciar sesión:", error);
-      setError("Error de conexión. Por favor, intenta nuevamente.");
+      const errorMsg = "Error de conexión. Por favor, intenta nuevamente.";
+      setError(errorMsg);
+      toast.error(errorMsg);
     } finally {
       setIsSubmitting(false);
     }

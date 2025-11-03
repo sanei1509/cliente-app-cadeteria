@@ -1,18 +1,41 @@
 import { useNavigate } from "react-router-dom";
-import { useState } from "react";
-import { TruckIcon, LayersIcon, ChevronIcon, LogoutIcon } from "../../components/icons";
-import { getUserInfo } from "../../components/UserInfo"
+import { useSelector, useDispatch } from "react-redux";
+import { useState, useRef, useEffect } from "react";
+import { selectUser, selectUserPlan, clearUser } from "../../features/userSlice";
+import { TruckIcon, LayersIcon, LogoutIcon } from "../../components/icons";
+import CancelPlanModal from "../../components/CancelPlanModal";
 
 const Navbar = () => {
     const navigate = useNavigate();
-       
+    const dispatch = useDispatch();
+    const [dropdownOpen, setDropdownOpen] = useState(false);
+    const [cancelPlanModalOpen, setCancelPlanModalOpen] = useState(false);
+    const dropdownRef = useRef(null);
 
+    // Obtener datos del usuario desde Redux
+    const user = useSelector(selectUser);
+    const userPlan = useSelector(selectUserPlan);
 
-//traigo la info del usuario desde un componente
-    const user = getUserInfo();
+    const userName = user?.nombre || user?.username || "Usuario";
+    const userEmail = user?.email || "";
+    const planDisplay = userPlan || "Plus";
 
-    const userName = user?.name || user?.username || "Usuario";
-    const userPlan = user?.plan || "Plus";
+    // Cerrar dropdown al hacer clic fuera
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+                setDropdownOpen(false);
+            }
+        };
+
+        if (dropdownOpen) {
+            document.addEventListener("mousedown", handleClickOutside);
+        }
+
+        return () => {
+            document.removeEventListener("mousedown", handleClickOutside);
+        };
+    }, [dropdownOpen]);
 
     // Generar iniciales del nombre (primeras letras de nombre y apellido)
     const getInitials = (name) => {
@@ -26,12 +49,11 @@ const Navbar = () => {
     const userInitials = getInitials(userName);
 
     const logout = () => {
-        localStorage.removeItem("token");
-        localStorage.removeItem("user");
+        // Limpiar usuario de Redux (automáticamente limpia localStorage)
+        dispatch(clearUser());
         navigate("/login");
     };
 
-   
     return (
     <div className="navbar-content">
       <div className="navbar-brand">
@@ -42,27 +64,80 @@ const Navbar = () => {
       </div>
 
       <div className="navbar-user">
-        <span className="plan-badge" title="Plan actual">
+        <span
+          className={`plan-badge ${planDisplay.toLowerCase() === 'premium' ? 'plan-badge-premium-yellow' : ''}`}
+          title="Plan actual"
+        >
           <LayersIcon />
-          Plan {userPlan}
+          Plan {planDisplay}
         </span>
 
-        <div className="navbar-user-info">
-          <div className="navbar-avatar">{userInitials}</div>
-          <span className="navbar-username">{userName}</span>
-
-          {/* 👇 Botón de cerrar sesión al lado del nombre */}
+        <div className="navbar-user-info" ref={dropdownRef}>
           <button
-            type="button"
-            className="icon-button logout-btn"
-            onClick={logout}
-            title="Cerrar sesión"          // tooltip nativo
-            aria-label="Cerrar sesión"     // accesibilidad
+            className="user-dropdown-trigger"
+            onClick={() => setDropdownOpen(!dropdownOpen)}
+            aria-expanded={dropdownOpen}
           >
-            <LogoutIcon />
+            <div className="navbar-avatar">{userInitials}</div>
+            <span className="navbar-username">{userName}</span>
+            <svg
+              className={`dropdown-arrow ${dropdownOpen ? 'open' : ''}`}
+              width="12"
+              height="12"
+              viewBox="0 0 12 12"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M2 4L6 8L10 4"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
           </button>
+
+          {dropdownOpen && (
+            <div className="navbar-dropdown">
+              <div className="dropdown-user-info">
+                <div className="dropdown-user-name">{userName}</div>
+                <div className="dropdown-user-email">{userEmail}</div>
+              </div>
+              <div className="dropdown-divider"></div>
+              {userPlan.toLowerCase() === 'premium' && (
+                <>
+                  <button
+                    className="navbar-dropdown-item"
+                    onClick={() => {
+                      setDropdownOpen(false);
+                      setCancelPlanModalOpen(true);
+                    }}
+                  >
+                    <span>Cancelar Plan Premium</span>
+                  </button>
+                  <div className="dropdown-divider"></div>
+                </>
+              )}
+              <button
+                className="navbar-dropdown-item"
+                onClick={() => {
+                  setDropdownOpen(false);
+                  logout();
+                }}
+              >
+                <LogoutIcon />
+                <span>Cerrar sesión</span>
+              </button>
+            </div>
+          )}
         </div>
       </div>
+
+      <CancelPlanModal
+        isOpen={cancelPlanModalOpen}
+        onClose={() => setCancelPlanModalOpen(false)}
+      />
     </div>
   );
 };

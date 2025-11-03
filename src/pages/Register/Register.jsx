@@ -1,10 +1,14 @@
 // src/pages/Register.jsx
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { useDispatch } from "react-redux";
+import { setUser } from "../../features/userSlice";
 import { API_CESAR } from "../../api/config";
+import { toast } from 'react-toastify';
 
 export default function Register() {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
 
   const [form, setForm] = useState({
     fullName: "",
@@ -73,14 +77,11 @@ export default function Register() {
 
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        alert(`Error de registro: ${err.message || res.statusText}`);
+        toast.error(`Error de registro: ${err.message || res.statusText}`);
         return;
       }
 
       const data = await res.json();
-      console.log("Respuesta completa del servidor:", data);
-      console.log("Tipo de data:", typeof data);
-      console.log("Keys de data:", Object.keys(data));
 
       // Intentar extraer token y usuario de diferentes estructuras posibles
       let tokenStr, userObj;
@@ -89,11 +90,9 @@ export default function Register() {
       if (data?.token?.token && data?.token?.user) {
         tokenStr = data.token.token;
         userObj = data.token.user;
-        console.log("✅ Estructura correcta detectada (con wrapper token)");
       }
       // Caso 2: Respuesta directa del usuario (sin token) - hacer login manual
       else if (data?.id && data?.username) {
-        console.log("⚠️ Solo datos de usuario, haciendo login automático...");
         
         try {
           const loginRes = await fetch(`${API_CESAR}/public/v1/login`, {
@@ -106,40 +105,40 @@ export default function Register() {
           });
 
           if (!loginRes.ok) {
-            alert("Registro exitoso. Por favor, inicia sesión manualmente.");
+            toast.success("Registro exitoso. Por favor, inicia sesión manualmente.");
             navigate("/login");
             return;
           }
 
           const loginData = await loginRes.json();
-          console.log("Respuesta del login:", loginData);
 
           tokenStr = loginData?.token?.token;
           userObj = loginData?.token?.user;
         } catch (loginError) {
-          console.error("Error en login automático:", loginError);
-          alert("Registro exitoso. Por favor, inicia sesión manualmente.");
+          toast.success("Registro exitoso. Por favor, inicia sesión manualmente.");
           navigate("/login");
           return;
         }
       }
 
-      console.log("Token final:", tokenStr);
-      console.log("Usuario final:", userObj);
-
       if (tokenStr && userObj) {
+        // Limpiar localStorage antes de guardar nuevos datos
+        localStorage.clear();
+
+        // Guardar token
         localStorage.setItem("token", tokenStr);
-        localStorage.setItem("user", JSON.stringify(userObj));
-        console.log("✅ Login automático exitoso");
+
+        // Guardar usuario usando Redux (automáticamente sincroniza con localStorage)
+        dispatch(setUser(userObj));
+
+        toast.success("¡Cuenta creada exitosamente! Bienvenido");
         navigate("/dashboard");
       } else {
-        console.error("❌ No se pudo extraer token o usuario");
-        alert("Registro exitoso. Por favor, inicia sesión manualmente.");
+        toast.success("Registro exitoso. Por favor, inicia sesión manualmente.");
         navigate("/login");
       }
     } catch (error) {
-      console.error("Error al registrar usuario:", error);
-      alert("Error de conexión. Intentá nuevamente.");
+      toast.error("Error de conexión. Intentá nuevamente.");
     }
   };
 

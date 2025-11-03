@@ -5,6 +5,8 @@ import { store } from './store/store';
 import Dashboard from "./pages/Dashboard/dashboard.jsx";
 import DashboardAdmin from "./pages/DashboardAdmin/DashboardAdmin.jsx";
 import { Provider } from 'react-redux';
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 // Componente para proteger rutas privadas
 const Private = ({ children }) => {
@@ -50,21 +52,32 @@ function Layout() {
 export default function App() {
   return (
     <Provider store={store}>
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<Layout />}>
+            <Route index element={<Navigate to="/dashboard" replace />} />
+            <Route path="login" element={<Login />} />
+            <Route path="register" element={<Register />} />
 
-    <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<Layout />}>
-          <Route index element={<Navigate to="/dashboard" replace />} />
-          <Route path="login" element={<Login />} />
-          <Route path="register" element={<Register />} />
+            {/* Rutas Privadas */}
+            <Route path="dashboard" element={<Private><Dashboard /></Private>} />
+            <Route path="dashboardAdmin" element={<PrivateAdmin><DashboardAdmin /></PrivateAdmin>} />
+          </Route>
+        </Routes>
+      </BrowserRouter>
 
-          {/* Rutas Privadas */}
-          <Route path="dashboard" element={<Private><Dashboard /></Private>} />
-          <Route path="dashboardAdmin" element={<PrivateAdmin><DashboardAdmin /></PrivateAdmin>} />
-        </Route>
-      </Routes>
-    </BrowserRouter>
-
+      <ToastContainer
+        position="top-right"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="light"
+      />
     </Provider>
   );
 }

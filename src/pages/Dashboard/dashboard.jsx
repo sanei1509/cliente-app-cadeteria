@@ -1,14 +1,14 @@
 // src/pages/Dashboard.jsx
+import { useSelector } from "react-redux";
+import { selectUser } from "../../features/userSlice";
 import Envios from "./Envios";
 import Navbar from "./Navbar";
 import KPIs from "./KPIs";
-import { getUserInfo } from "../../components/UserInfo"
-
-
-//traigo la info del usuario desde un componente
-    const user = getUserInfo();
 
 export default function Dashboard() {
+  // Obtener usuario desde Redux
+  const user = useSelector(selectUser);
+
   return (
     <div className="dashboard">
       <nav className="navbar">
