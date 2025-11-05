@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { useSelector } from "react-redux";
 import {
   PackageIcon,
@@ -13,42 +13,36 @@ import UpgradePlanModal from "../../components/UpgradePlanModal";
 const KPIs = () => {
   const [upgradeModalOpen, setUpgradeModalOpen] = useState(false);
 
-  // Obtener datos de Redux
-  const envios = useSelector((state) => state.envios.envios);
+  // Obtener datos de Redux - usar allEnvios para que no cambien con filtros
+  const allEnvios = useSelector((state) => state.envios.allEnvios);
   const userPlan = useSelector(selectUserPlan);
   const plan = userPlan?.toLowerCase() || "plus";
 
-  // Calcular estadísticas desde los envíos
-  const stats = useMemo(() => {
-    if (!Array.isArray(envios)) {
-      return {
-        total: 0,
-        enTransito: 0,
-        entregadosSemana: 0,
-        pendientes: 0,
-      };
-    }
+  // Calcular estadísticas desde TODOS los envíos (sin filtros)
+  const ahora = new Date();
+  const unaSemanaAtras = new Date(ahora);
+  unaSemanaAtras.setDate(ahora.getDate() - 7);
 
-    const ahora = new Date();
-    const unaSemanaAtras = new Date(ahora);
-    unaSemanaAtras.setDate(ahora.getDate() - 7);
+  const total = allEnvios.length;
+  const enTransito = allEnvios.filter(e => e.estado === 'en_ruta').length;
+  const entregadosSemana = allEnvios.filter(e => {
+    if (e.estado !== 'entregado') return false;
+    const fechaEnvio = new Date(e.fechaActualizacion || e.fechaCreacion);
+    return fechaEnvio >= unaSemanaAtras;
+  }).length;
+  const pendientes = allEnvios.filter(e => e.estado === 'pendiente').length;
 
-    return {
-      total: envios.length,
-      enTransito: envios.filter(e => e.estado === 'en_ruta').length,
-      entregadosSemana: envios.filter(e => {
-        if (e.estado !== 'entregado') return false;
-        const fechaEnvio = new Date(e.fechaActualizacion || e.fechaCreacion);
-        return fechaEnvio >= unaSemanaAtras;
-      }).length,
-      pendientes: envios.filter(e => e.estado === 'pendiente').length,
-    };
-  }, [envios]);
+  const stats = {
+    total,
+    enTransito,
+    entregadosSemana,
+    pendientes
+  };
 
   // Límite de envíos pendientes según plan
   const maxPendientes = plan === 'premium' ? null : 5;
-  const porcentajePendientes = maxPendientes 
-    ? Math.round((stats.pendientes / maxPendientes) * 100) 
+  const porcentajePendientes = maxPendientes
+    ? Math.round((stats.pendientes / maxPendientes) * 100)
     : 0;
 
   const handleUpgradeSuccess = () => {

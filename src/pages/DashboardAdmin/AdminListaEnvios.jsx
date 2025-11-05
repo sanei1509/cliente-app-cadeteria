@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { setEnvios, setEnviosLoading } from '../../features/enviosSlice';
@@ -25,53 +25,30 @@ const AdminListaEnvios = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
-  const envios = useSelector((s) => s.envios.envios);
+  const allEnvios = useSelector((s) => s.envios.allEnvios);
   const isLoading = useSelector((s) => s.envios.areEnviosLoading);
 
-  // Cargar envíos cuando cambian los filtros
+  // Cargar TODOS los envíos solo una vez al montar el componente
   useEffect(() => {
-    cargarEnvios();
+    cargarTodosLosEnvios();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filtroFecha, filtroEstado, filtroTamano, filtroUsuarioId]);
+  }, []);
 
-  const cargarEnvios = () => {
+  const cargarTodosLosEnvios = () => {
     const token = localStorage.getItem("token");
     if (!token) {
       navigate("/login");
       return;
     }
 
-    const params = new URLSearchParams();
-
-    // Filtro de estado
-    if (filtroEstado !== 'todos') {
-      params.set('estado', filtroEstado);
-    }
-    // Filtro de tamaño
-    if (filtroTamano !== 'todos') {
-      params.set('tamanoPaquete', filtroTamano);
-    }
-    // Filtro de fecha
-    if (filtroFecha === 'semana') {
-      params.set('ultimos', 'semana');
-    } else if (filtroFecha === 'mes') {
-      params.set('ultimos', 'mes');
-    }
-    // Filtro por usuario (server-side si tu API lo soporta)
-    const userIdTrim = filtroUsuarioId.trim();
-    if (userIdTrim) {
-      // Pongo ambos por compatibilidad (tu back usa "user" en el modelo)
-      params.set('userId', userIdTrim);
-      params.set('user', userIdTrim);
-    }
-
     dispatch(setEnviosLoading(true));
     setError(null);
 
-    fetch(`${API_CESAR}/v1/envios?${params.toString()}`, {
+    // Cargar TODOS los envíos sin filtros
+    fetch(`${API_CESAR}/v1/envios`, {
       method: "GET",
-      headers: { 
-        authorization: `Bearer ${token}` 
+      headers: {
+        authorization: `Bearer ${token}`
       },
     })
       .then((response) => {
@@ -80,7 +57,7 @@ const AdminListaEnvios = () => {
         throw new Error("Error al cargar envíos");
       })
       .then((data) => {
-        dispatch(setEnvios(data));
+        dispatch(setEnvios(data)); // Carga inicial: actualiza allEnvios y envios
       })
       .catch((e) => {
         if (e.message === "UNAUTHORIZED") {
@@ -93,39 +70,66 @@ const AdminListaEnvios = () => {
       .finally(() => dispatch(setEnviosLoading(false)));
   };
 
-  // Pre-filtrado por ID o nombre de usuario (client-side fallback si el back no filtra)
-  const preFiltrados = useMemo(() => {
-    if (!Array.isArray(envios)) return [];
-    const needle = (filtroUsuarioId || "").trim().toLowerCase();
-    if (!needle) return envios;
+  // Aplicar TODOS los filtros del lado del cliente
+  const enviosFiltrados = allEnvios.filter((e) => {
+    // Filtro por estado
+    if (filtroEstado !== 'todos' && e.estado !== filtroEstado) {
+      return false;
+    }
 
-    return envios.filter((e) => {
+    // Filtro por tamaño
+    if (filtroTamano !== 'todos' && e.tamanoPaquete !== filtroTamano) {
+      return false;
+    }
+
+    // Filtro por fecha
+    if (filtroFecha !== 'historico') {
+      const fechaEnvio = new Date(e.fechaRetiro || e.fechaCreacion || e.createdAt);
+      const ahora = new Date();
+
+      if (filtroFecha === 'semana') {
+        const unaSemanaAtras = new Date(ahora);
+        unaSemanaAtras.setDate(ahora.getDate() - 7);
+        if (fechaEnvio < unaSemanaAtras) return false;
+      } else if (filtroFecha === 'mes') {
+        const unMesAtras = new Date(ahora);
+        unMesAtras.setMonth(ahora.getMonth() - 1);
+        if (fechaEnvio < unMesAtras) return false;
+      }
+    }
+
+    // Filtro por usuario (ID o nombre)
+    const needle = (filtroUsuarioId || "").trim().toLowerCase();
+    if (needle) {
       const uid = getUserIdFromEnvio(e).toLowerCase();
-      // Buscar por ID (incluye los primeros 8 caracteres)
+
+      // Buscar por ID
       if (uid.includes(needle)) return true;
 
-      // Buscar por nombre o apellido del usuario
+      // Buscar por nombre, apellido o username
       if (e.user && typeof e.user === 'object') {
         const nombre = (e.user.nombre || '').toLowerCase();
         const apellido = (e.user.apellido || '').toLowerCase();
         const username = (e.user.username || '').toLowerCase();
         const nombreCompleto = `${nombre} ${apellido}`.trim();
 
-        return nombre.includes(needle) ||
-               apellido.includes(needle) ||
-               username.includes(needle) ||
-               nombreCompleto.includes(needle);
+        if (nombre.includes(needle) ||
+            apellido.includes(needle) ||
+            username.includes(needle) ||
+            nombreCompleto.includes(needle)) {
+          return true;
+        }
       }
 
-      return false;
-    });
-  }, [envios, filtroUsuarioId]);
+      return false; // No coincide con el filtro de usuario
+    }
+
+    return true;
+  });
 
   // Ordenar envíos: más recientes primero
-  const sortedEnvios = useMemo(() => {
-    const getDate = (e) => new Date(e.fechaRetiro || e.fechaCreacion || e.createdAt || 0);
-    return preFiltrados.slice().sort((a, b) => getDate(b) - getDate(a));
-  }, [preFiltrados]);
+  const getDate = (e) => new Date(e.fechaRetiro || e.fechaCreacion || e.createdAt || 0);
+  const sortedEnvios = enviosFiltrados.slice().sort((a, b) => getDate(b) - getDate(a));
 
   return (
     <section className="card">

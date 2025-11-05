@@ -1,6 +1,6 @@
 import EditarEnvioModal from "./EditarEnvioModal";
 import { API_CESAR } from "../../api/config";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { setEnvios, setEnviosLoading, updateEnvio } from "../../features/enviosSlice";
 import { useNavigate } from "react-router-dom";
@@ -22,27 +22,22 @@ const ListarEnvios = () => {
   const navigate = useNavigate();
 
   // Obtener datos de Redux
-  const envios = useSelector((s) => s.envios.envios);
+  const allEnvios = useSelector((s) => s.envios.allEnvios);
   const isLoading = useSelector((s) => s.envios.areEnviosLoading);
 
-  // Cargar envíos al montar el componente y cuando cambia el filtro
+  // Cargar TODOS los envíos solo una vez al montar el componente
   useEffect(() => {
-    cargarEnvios({ filtroFecha, filtroEstado });
+    cargarTodosLosEnvios();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filtroFecha, filtroEstado]);
+  }, []);
 
-
-  const cargarEnvios = ({ filtroFecha = 'historico', filtroEstado = 'todos' } = {}) => {
+  const cargarTodosLosEnvios = () => {
     const token = localStorage.getItem("token");
     if (!token) { navigate("/login"); return; }
 
-    const params = new URLSearchParams();
-    if (filtroEstado !== 'todos') params.set('estado', filtroEstado);
-    if (filtroFecha === 'semana') params.set('ultimos', 'semana');
-    if (filtroFecha === 'mes') params.set('ultimos', 'mes');
-
     dispatch(setEnviosLoading(true));
-    fetch(`${API_CESAR}/v1/envios?${params.toString()}`, {
+    // Cargar TODOS los envíos sin filtros
+    fetch(`${API_CESAR}/v1/envios`, {
       method: "GET",
       headers: { authorization: `Bearer ${token}` },
     })
@@ -57,6 +52,10 @@ const ListarEnvios = () => {
         else setError(e.message || "Error de conexión");
       })
       .finally(() => dispatch(setEnviosLoading(false)));
+  };
+
+  const cargarEnvios = () => {
+    cargarTodosLosEnvios();
   };
 
 
@@ -133,13 +132,35 @@ const ListarEnvios = () => {
       });
   };
 
-  // Logica para ordenar los envios, para que se vean primero los pendientes de fechas hoy o futuras
+  // Aplicar filtros del lado del cliente
+  const enviosFiltrados = allEnvios.filter((e) => {
+    // Filtro por estado
+    if (filtroEstado !== 'todos' && e.estado !== filtroEstado) {
+      return false;
+    }
+
+    // Filtro por fecha
+    if (filtroFecha !== 'historico') {
+      const fechaEnvio = new Date(e.fechaRetiro || e.fecha || e.createdAt);
+      const ahora = new Date();
+
+      if (filtroFecha === 'semana') {
+        const unaSemanaAtras = new Date(ahora);
+        unaSemanaAtras.setDate(ahora.getDate() - 7);
+        if (fechaEnvio < unaSemanaAtras) return false;
+      } else if (filtroFecha === 'mes') {
+        const unMesAtras = new Date(ahora);
+        unMesAtras.setMonth(ahora.getMonth() - 1);
+        if (fechaEnvio < unMesAtras) return false;
+      }
+    }
+
+    return true;
+  });
+
   // Ordenar por fecha (más futura arriba). Usa fechaRetiro > fecha > createdAt.
-  const sortedEnvios = useMemo(() => {
-    if (!Array.isArray(envios)) return [];
-    const getDate = (e) => new Date(e.fechaRetiro || e.fecha || e.createdAt || 0);
-    return envios.slice().sort((a, b) => getDate(b) - getDate(a)); // futuro primero
-  }, [envios]);
+  const getDate = (e) => new Date(e.fechaRetiro || e.fecha || e.createdAt || 0);
+  const sortedEnvios = enviosFiltrados.slice().sort((a, b) => getDate(b) - getDate(a));
 
 
   return (

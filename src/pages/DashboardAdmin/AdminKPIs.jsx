@@ -9,7 +9,7 @@ import {
 } from "../../components/icons";
 
 const AdminKPIs = () => {
-  const envios = useSelector((state) => state.envios.envios);
+  const allEnvios = useSelector((state) => state.envios.allEnvios);
   const [totalUsuarios, setTotalUsuarios] = useState(0);
 
   // Cargar total de usuarios
@@ -25,11 +25,11 @@ const AdminKPIs = () => {
       .catch(() => setTotalUsuarios(0));
   }, []);
 
-  // Calcular estadísticas desde los envíos
-  const totalEnvios = Array.isArray(envios) ? envios.length : 0;
-  const enRuta = Array.isArray(envios) ? envios.filter(e => e.estado === 'en_ruta').length : 0;
-  const pendientes = Array.isArray(envios) ? envios.filter(e => e.estado === 'pendiente').length : 0;
-  const entregados = Array.isArray(envios) ? envios.filter(e => e.estado === 'entregado').length : 0;
+  // Calcular estadísticas desde TODOS los envíos (sin filtros)
+  const totalEnvios = Array.isArray(allEnvios) ? allEnvios.length : 0;
+  const enRuta = Array.isArray(allEnvios) ? allEnvios.filter(e => e.estado === 'en_ruta').length : 0;
+  const pendientes = Array.isArray(allEnvios) ? allEnvios.filter(e => e.estado === 'pendiente').length : 0;
+  const entregados = Array.isArray(allEnvios) ? allEnvios.filter(e => e.estado === 'entregado').length : 0;
 
   return (
     <section className="stats-grid">
