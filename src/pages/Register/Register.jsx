@@ -276,7 +276,11 @@ export default function Register() {
             <span className="form-error">{errors.terms}</span>
           </div>
 
-          <button type="submit" className="btn btn-primary btn-full">
+          <button
+            type="submit"
+            className="btn btn-primary btn-full"
+            disabled={!form.password || !form.confirmPassword || form.password !== form.confirmPassword}
+          >
             Crear Cuenta
           </button>
         </form>

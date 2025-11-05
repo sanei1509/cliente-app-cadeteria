@@ -3,7 +3,7 @@ import { API_CESAR } from "../../api/config";
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { addEnvio } from "../../features/enviosSlice";
-import { useDispatch} from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { toast } from 'react-toastify';
 
 /**
@@ -21,6 +21,10 @@ const AgregarEnvio = () => {
     const [categorias, setCategorias] = useState([]);
     const [catLoading, setCatLoading] = useState(true);
     const [catError, setCatError] = useState(null);
+
+    // Obtener usuario y envíos desde Redux
+    const user = useSelector((state) => state.user.user);
+    const envios = useSelector((state) => state.envios.envios);
     
 
 
@@ -130,7 +134,17 @@ fetch(url, {
 
             <button
                 className="btn btn-primary"
-                onClick={() => setIsModalOpen(true)}
+                onClick={() => {
+                    // Validar límite de envíos para plan Plus
+                    if (user?.plan === "plus") {
+                        const enviosPendientes = envios.filter(e => e.estado === "pendiente").length;
+                        if (enviosPendientes >= 10) {
+                            toast.warning("Has alcanzado el límite de 10 envíos pendientes del Plan Plus. Actualiza a Plan Premium para envíos ilimitados.");
+                            return;
+                        }
+                    }
+                    setIsModalOpen(true);
+                }}
             >
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
                     <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" />

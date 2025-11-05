@@ -1,4 +1,10 @@
-import { PackageIcon, TruckIcon, CheckCircleIcon, ClockIcon, PremiumStarIcon } from "../../components/icons";
+import {
+  PackageIcon,
+  TruckIcon,
+  CheckCircleIcon,
+  ClockIcon,
+  PremiumStarIcon,
+} from "../../components/icons";
 import { useState } from "react";
 import { useSelector } from "react-redux";
 import { selectUserPlan } from "../../features/userSlice";
@@ -24,7 +30,7 @@ const KPIs = () => {
       />
       <article className="stat-card">
         <div className="stat-header">
-          <span className="stat-label">Envíos pendientes</span>
+          <span className="stat-label">Envíos totales</span>
           <div className="stat-icon stat-icon-primary">
             <PackageIcon />
           </div>
@@ -66,29 +72,31 @@ const KPIs = () => {
         {/* Mostrar solo si el plan es PLUS */}
         {plan === "plus" && (
           <>
-            <div className="stat-change" style={{ marginBottom: '0.5rem' }}>
+            <div className="stat-change" style={{ marginBottom: "0.5rem" }}>
               Plan Plus (máx. 5 pendientes)
             </div>
 
             <div
               className="plan-badge-premium"
-              style={{ marginTop: '0.75rem', width: '100%', cursor: 'pointer' }}
+              style={{ marginTop: "0.75rem", width: "100%", cursor: "pointer" }}
               onClick={() => setUpgradeModalOpen(true)}
               role="button"
               tabIndex={0}
-              onKeyPress={(e) => e.key === 'Enter' && setUpgradeModalOpen(true)}
+              onKeyPress={(e) => e.key === "Enter" && setUpgradeModalOpen(true)}
             >
               <PremiumStarIcon />
               <div className="plan-badge-text">
                 <span className="plan-badge-title">Actualizar a Premium</span>
-                <span className="plan-badge-subtitle">*sin límite de envíos pendientes</span>
+                <span className="plan-badge-subtitle">
+                  *sin límite de envíos pendientes
+                </span>
               </div>
             </div>
           </>
         )}
       </article>
     </>
-  )
-}
+  );
+};
 
 export default KPIs;
