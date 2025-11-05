@@ -17,8 +17,6 @@ const AdminTablaEnvio = ({ envio }) => {
   const [copied, setCopied] = useState(false);
   const dispatch = useDispatch();
 
-  console.log('👤 Usuario en envio:', envio.user);
-
   const getBadgeClass = (estado) => {
     const estados = {
       pendiente: "badge-warning",

@@ -93,7 +93,7 @@ const AdminListaEnvios = () => {
       .finally(() => dispatch(setEnviosLoading(false)));
   };
 
-  // Pre-filtrado por ID de usuario (client-side fallback si el back no filtra)
+  // Pre-filtrado por ID o nombre de usuario (client-side fallback si el back no filtra)
   const preFiltrados = useMemo(() => {
     if (!Array.isArray(envios)) return [];
     const needle = (filtroUsuarioId || "").trim().toLowerCase();
@@ -101,8 +101,23 @@ const AdminListaEnvios = () => {
 
     return envios.filter((e) => {
       const uid = getUserIdFromEnvio(e).toLowerCase();
-      // Incluyo contains para permitir buscar por los primeros 8 caracteres
-      return uid.includes(needle);
+      // Buscar por ID (incluye los primeros 8 caracteres)
+      if (uid.includes(needle)) return true;
+
+      // Buscar por nombre o apellido del usuario
+      if (e.user && typeof e.user === 'object') {
+        const nombre = (e.user.nombre || '').toLowerCase();
+        const apellido = (e.user.apellido || '').toLowerCase();
+        const username = (e.user.username || '').toLowerCase();
+        const nombreCompleto = `${nombre} ${apellido}`.trim();
+
+        return nombre.includes(needle) ||
+               apellido.includes(needle) ||
+               username.includes(needle) ||
+               nombreCompleto.includes(needle);
+      }
+
+      return false;
     });
   }, [envios, filtroUsuarioId]);
 

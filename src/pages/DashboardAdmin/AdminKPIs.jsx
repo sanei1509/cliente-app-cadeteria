@@ -1,3 +1,6 @@
+import { useSelector } from 'react-redux';
+import { useState, useEffect } from 'react';
+import { API_CESAR } from '../../api/config';
 import {
   PackageIcon,
   TruckIcon,
@@ -6,6 +9,28 @@ import {
 } from "../../components/icons";
 
 const AdminKPIs = () => {
+  const envios = useSelector((state) => state.envios.envios);
+  const [totalUsuarios, setTotalUsuarios] = useState(0);
+
+  // Cargar total de usuarios
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (!token) return;
+
+    fetch(`${API_CESAR}/v1/users`, {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+      .then(res => res.ok ? res.json() : [])
+      .then(data => setTotalUsuarios(Array.isArray(data) ? data.length : 0))
+      .catch(() => setTotalUsuarios(0));
+  }, []);
+
+  // Calcular estadísticas desde los envíos
+  const totalEnvios = Array.isArray(envios) ? envios.length : 0;
+  const enRuta = Array.isArray(envios) ? envios.filter(e => e.estado === 'en_ruta').length : 0;
+  const pendientes = Array.isArray(envios) ? envios.filter(e => e.estado === 'pendiente').length : 0;
+  const entregados = Array.isArray(envios) ? envios.filter(e => e.estado === 'entregado').length : 0;
+
   return (
     <section className="stats-grid">
       <article className="stat-card">
@@ -15,8 +40,8 @@ const AdminKPIs = () => {
             <PackageIcon />
           </div>
         </div>
-        <div className="stat-value">156</div>
-        <div className="stat-change positive">+8% este mes</div>
+        <div className="stat-value">{totalEnvios}</div>
+        <div className="stat-change">{entregados} entregados</div>
       </article>
 
       <article className="stat-card">
@@ -26,19 +51,19 @@ const AdminKPIs = () => {
             <TruckIcon width={20} height={20} />
           </div>
         </div>
-        <div className="stat-value">42</div>
-        <div className="stat-change">Actualizado hace 2 min</div>
+        <div className="stat-value">{enRuta}</div>
+        <div className="stat-change">En camino a destino</div>
       </article>
 
       <article className="stat-card">
         <div className="stat-header">
-          <span className="stat-label">Usuarios activos</span>
+          <span className="stat-label">Usuarios registrados</span>
           <div className="stat-icon stat-icon-success">
             <UsersIcon />
           </div>
         </div>
-        <div className="stat-value">28</div>
-        <div className="stat-change positive">3 nuevos esta semana</div>
+        <div className="stat-value">{totalUsuarios}</div>
+        <div className="stat-change">Total en el sistema</div>
       </article>
 
       <article className="stat-card">
@@ -48,8 +73,8 @@ const AdminKPIs = () => {
             <ClockIcon />
           </div>
         </div>
-        <div className="stat-value">18</div>
-        <div className="stat-change">Requieren asignación</div>
+        <div className="stat-value">{pendientes}</div>
+        <div className="stat-change">Por recoger</div>
       </article>
     </section>
   );

@@ -4,7 +4,6 @@ import { API_CESAR, API_SANTI } from "../../api/config";
 import { useDispatch } from "react-redux";
 import { updateEnvio } from "../../features/enviosSlice";
 
-
 /**
  * Modal para editar un envío existente
  *
@@ -16,7 +15,7 @@ import { updateEnvio } from "../../features/enviosSlice";
  */
 
 const EditarEnvioModal = ({ isOpen, onClose, envioId, onSuccess }) => {
-const dispatch = useDispatch();
+  const dispatch = useDispatch();
 
   const [formData, setFormData] = useState({
     origenCalle: "",
@@ -46,49 +45,46 @@ const dispatch = useDispatch();
   }, [isOpen, envioId]);
 
   const cargarEnvio = () => {
-  setIsLoading(true);
+    setIsLoading(true);
 
-  const token = localStorage.getItem("token");
+    const token = localStorage.getItem("token");
 
-  fetch(`${API_CESAR}/v1/envios/${envioId}`, {
-    method: "GET",
-    headers: { Authorization: `Bearer ${token}` },
-  })
-    .then((response) => {
-      if (!response.ok) {
-        throw new Error("Error al cargar los datos del envío");
-      }
-      return response.json();
+    fetch(`${API_CESAR}/v1/envios/${envioId}`, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${token}` },
     })
-    .then((data) => {
-      setFormData({
-        origenCalle: data.origen?.calle || "",
-        origenNumero: data.origen?.numero || "",
-        origenCiudad: data.origen?.ciudad || "",
-        origenReferencia: data.origen?.referencia || "",
-        destinoCalle: data.destino?.calle || "",
-        destinoNumero: data.destino?.numero || "",
-        destinoCiudad: data.destino?.ciudad || "",
-        destinoReferencia: data.destino?.referencia || "",
-        fechaRetiro: data.fechaRetiro
-          ? data.fechaRetiro.split("T")[0]
-          : "",
-        horaRetiroAprox: data.horaRetiroAprox || "",
-        tamanoPaquete: data.tamanoPaquete || "",
-        notas: data.notas || "",
-        categoriaNombre: data.categoria || "",
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error("Error al cargar los datos del envío");
+        }
+        return response.json();
+      })
+      .then((data) => {
+        setFormData({
+          origenCalle: data.origen?.calle || "",
+          origenNumero: data.origen?.numero || "",
+          origenCiudad: data.origen?.ciudad || "",
+          origenReferencia: data.origen?.referencia || "",
+          destinoCalle: data.destino?.calle || "",
+          destinoNumero: data.destino?.numero || "",
+          destinoCiudad: data.destino?.ciudad || "",
+          destinoReferencia: data.destino?.referencia || "",
+          fechaRetiro: data.fechaRetiro ? data.fechaRetiro.split("T")[0] : "",
+          horaRetiroAprox: data.horaRetiroAprox || "",
+          tamanoPaquete: data.tamanoPaquete || "",
+          notas: data.notas || "",
+          categoriaNombre: data.categoria || "",
+        });
+      })
+      .catch((error) => {
+        console.error("Error al cargar envío:", error);
+        alert(error.message || "Error de conexión al cargar el envío");
+        onClose();
+      })
+      .finally(() => {
+        setIsLoading(false);
       });
-    })
-    .catch((error) => {
-      console.error("Error al cargar envío:", error);
-      alert(error.message || "Error de conexión al cargar el envío");
-      onClose();
-    })
-    .finally(() => {
-      setIsLoading(false);
-    });
-};
-
+  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -96,95 +92,108 @@ const dispatch = useDispatch();
   };
 
   const handleSubmit = (e) => {
-  e.preventDefault();
-  setIsSubmitting(true);
+    e.preventDefault();
+    setIsSubmitting(true);
 
-  const token = localStorage.getItem("token");
+    const token = localStorage.getItem("token");
 
-  // Solo incluir campos que tengan valor
-  const payload = {};
+    // Solo incluir campos que tengan valor
+    const payload = {};
 
-  // Origen
-  if (
-    formData.origenCalle ||
-    formData.origenNumero ||
-    formData.origenCiudad ||
-    formData.origenReferencia
-  ) {
-    payload.origen = {};
-    if (formData.origenCalle) payload.origen.calle = formData.origenCalle;
-    if (formData.origenNumero) payload.origen.numero = formData.origenNumero;
-    if (formData.origenCiudad) payload.origen.ciudad = formData.origenCiudad;
-    if (formData.origenReferencia) payload.origen.referencia = formData.origenReferencia;
-  }
+    // Origen
+    if (
+      formData.origenCalle ||
+      formData.origenNumero ||
+      formData.origenCiudad ||
+      formData.origenReferencia
+    ) {
+      payload.origen = {};
+      if (formData.origenCalle) payload.origen.calle = formData.origenCalle;
+      if (formData.origenNumero) payload.origen.numero = formData.origenNumero;
+      if (formData.origenCiudad) payload.origen.ciudad = formData.origenCiudad;
+      if (formData.origenReferencia)
+        payload.origen.referencia = formData.origenReferencia;
+    }
 
-  // Destino
-  if (
-    formData.destinoCalle ||
-    formData.destinoNumero ||
-    formData.destinoCiudad ||
-    formData.destinoReferencia
-  ) {
-    payload.destino = {};
-    if (formData.destinoCalle) payload.destino.calle = formData.destinoCalle;
-    if (formData.destinoNumero) payload.destino.numero = formData.destinoNumero;
-    if (formData.destinoCiudad) payload.destino.ciudad = formData.destinoCiudad;
-    if (formData.destinoReferencia) payload.destino.referencia = formData.destinoReferencia;
-  }
+    // Destino
+    if (
+      formData.destinoCalle ||
+      formData.destinoNumero ||
+      formData.destinoCiudad ||
+      formData.destinoReferencia
+    ) {
+      payload.destino = {};
+      if (formData.destinoCalle) payload.destino.calle = formData.destinoCalle;
+      if (formData.destinoNumero)
+        payload.destino.numero = formData.destinoNumero;
+      if (formData.destinoCiudad)
+        payload.destino.ciudad = formData.destinoCiudad;
+      if (formData.destinoReferencia)
+        payload.destino.referencia = formData.destinoReferencia;
+    }
 
-  // Otros campos
-  if (formData.fechaRetiro) payload.fechaRetiro = formData.fechaRetiro;
-  if (formData.horaRetiroAprox) payload.horaRetiroAprox = formData.horaRetiroAprox;
-  if (formData.tamanoPaquete) payload.tamanoPaquete = formData.tamanoPaquete;
-  if (formData.notas) payload.notas = formData.notas;
+    // Otros campos
+    if (formData.fechaRetiro) payload.fechaRetiro = formData.fechaRetiro;
+    if (formData.horaRetiroAprox)
+      payload.horaRetiroAprox = formData.horaRetiroAprox;
+    if (formData.tamanoPaquete) payload.tamanoPaquete = formData.tamanoPaquete;
+    if (formData.notas) payload.notas = formData.notas;
 
-  // Categoría
-  if (formData.categoriaNombre || formData.categoriaDescripcion) {
-    payload.categoria = {};
-    if (formData.categoriaNombre) payload.categoria.nombre = formData.categoriaNombre;
-    if (formData.categoriaDescripcion) payload.categoria.descripcion = formData.categoriaDescripcion;
-  }
+    // Categoría
+    if (formData.categoriaNombre || formData.categoriaDescripcion) {
+      payload.categoria = {};
+      if (formData.categoriaNombre)
+        payload.categoria.nombre = formData.categoriaNombre;
+      if (formData.categoriaDescripcion)
+        payload.categoria.descripcion = formData.categoriaDescripcion;
+    }
 
-  fetch(`${API_CESAR}/v1/envios/${envioId}`, {
-    method: "PUT",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify(payload),
-  })
-    .then((response) => {
-      if (!response.ok) {
-        return response.json().catch(() => ({})).then((err) => {
-          throw new Error(err?.message || "No se pudo actualizar el envío");
-        });
-      }
-      // Si la API devuelve 204 No Content, no intentes parsear JSON
-      if (response.status === 204) return null;
-      return response.json();
+    fetch(`${API_CESAR}/v1/envios/${envioId}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(payload),
     })
-    .then((data) => {
-      // Si el backend devolvió el envío actualizado, úsalo; si no, usamos lo enviado
-      const updatedEnvio = data ?? payload;
+      .then((response) => {
+        if (!response.ok) {
+          return response
+            .json()
+            .catch(() => ({}))
+            .then((err) => {
+              throw new Error(err?.message || "No se pudo actualizar el envío");
+            });
+        }
+        // Si la API devuelve 204 No Content, no intentes parsear JSON
+        if (response.status === 204) return null;
+        return response.json();
+      })
+      .then((data) => {
+        // Si el backend devolvió el envío actualizado, úsalo; si no, usamos lo enviado
+        const updatedEnvio = data ?? payload;
 
-      // 🔥 Actualizar el store global para re-render inmediato en la lista
-      dispatch(updateEnvio({ id: envioId, updatedEnvio }));
+        // 🔥 Actualizar el store global para re-render inmediato en la lista
+        dispatch(updateEnvio({ id: envioId, updatedEnvio }));
 
-      alert("Envío actualizado exitosamente");
-      onClose();
+        alert("Envío actualizado exitosamente");
+        onClose();
 
-      // Opcional: si querés además refrescar desde el server
-      if (onSuccess) onSuccess();
-    })
-    .catch((error) => {
-      console.error("Error al actualizar envío:", error);
-      alert(`Error: ${error.message || "Error de conexión. Por favor, intenta nuevamente."}`);
-    })
-    .finally(() => {
-      setIsSubmitting(false);
-    });
-};
-
+        // Opcional: si querés además refrescar desde el server
+        if (onSuccess) onSuccess();
+      })
+      .catch((error) => {
+        console.error("Error al actualizar envío:", error);
+        alert(
+          `Error: ${
+            error.message || "Error de conexión. Por favor, intenta nuevamente."
+          }`
+        );
+      })
+      .finally(() => {
+        setIsSubmitting(false);
+      });
+  };
 
   return (
     <Modal isOpen={isOpen} onClose={onClose}>

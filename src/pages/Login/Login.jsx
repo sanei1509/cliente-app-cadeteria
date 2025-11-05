@@ -7,7 +7,7 @@ import Logo from "./Logo";
 import FormularioLogin from "./FormularioLogin";
 import { API_SANTI } from "../../api/config";
 import { API_CESAR } from "../../api/config";
-import { toast } from 'react-toastify';
+import { toast } from "react-toastify";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -29,19 +29,16 @@ const Login = () => {
     setError(""); // Limpiar errores anteriores
 
     try {
-      const response = await fetch(
-        `${API_SANTI}/public/v1/loginReal`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            username: username,
-            password: password,
-          }),
-        }
-      );
+      const response = await fetch(`${API_CESAR}/public/v1/login`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          username: username,
+          password: password,
+        }),
+      });
 
       if (response.ok) {
         const data = await response.json();
