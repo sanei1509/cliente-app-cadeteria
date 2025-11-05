@@ -1,3 +1,5 @@
+import { useMemo, useState } from "react";
+import { useSelector } from "react-redux";
 import {
   PackageIcon,
   TruckIcon,
@@ -5,17 +7,49 @@ import {
   ClockIcon,
   PremiumStarIcon,
 } from "../../components/icons";
-import { useState } from "react";
-import { useSelector } from "react-redux";
 import { selectUserPlan } from "../../features/userSlice";
 import UpgradePlanModal from "../../components/UpgradePlanModal";
 
 const KPIs = () => {
   const [upgradeModalOpen, setUpgradeModalOpen] = useState(false);
 
-  // Obtener plan del usuario desde Redux
+  // Obtener datos de Redux
+  const envios = useSelector((state) => state.envios.envios);
   const userPlan = useSelector(selectUserPlan);
-  const plan = userPlan.toLowerCase();
+  const plan = userPlan?.toLowerCase() || "plus";
+
+  // Calcular estadísticas desde los envíos
+  const stats = useMemo(() => {
+    if (!Array.isArray(envios)) {
+      return {
+        total: 0,
+        enTransito: 0,
+        entregadosSemana: 0,
+        pendientes: 0,
+      };
+    }
+
+    const ahora = new Date();
+    const unaSemanaAtras = new Date(ahora);
+    unaSemanaAtras.setDate(ahora.getDate() - 7);
+
+    return {
+      total: envios.length,
+      enTransito: envios.filter(e => e.estado === 'en_ruta').length,
+      entregadosSemana: envios.filter(e => {
+        if (e.estado !== 'entregado') return false;
+        const fechaEnvio = new Date(e.fechaActualizacion || e.fechaCreacion);
+        return fechaEnvio >= unaSemanaAtras;
+      }).length,
+      pendientes: envios.filter(e => e.estado === 'pendiente').length,
+    };
+  }, [envios]);
+
+  // Límite de envíos pendientes según plan
+  const maxPendientes = plan === 'premium' ? null : 5;
+  const porcentajePendientes = maxPendientes 
+    ? Math.round((stats.pendientes / maxPendientes) * 100) 
+    : 0;
 
   const handleUpgradeSuccess = () => {
     setUpgradeModalOpen(false);
@@ -28,6 +62,7 @@ const KPIs = () => {
         onClose={() => setUpgradeModalOpen(false)}
         onUpgradeSuccess={handleUpgradeSuccess}
       />
+
       <article className="stat-card">
         <div className="stat-header">
           <span className="stat-label">Envíos totales</span>
@@ -35,8 +70,10 @@ const KPIs = () => {
             <PackageIcon />
           </div>
         </div>
-        <div className="stat-value">24</div>
-        <div className="stat-change positive">+12% vs ayer</div>
+        <div className="stat-value">{stats.total}</div>
+        <div className="stat-change">
+          {stats.entregadosSemana} entregados esta semana
+        </div>
       </article>
 
       <article className="stat-card">
@@ -46,8 +83,8 @@ const KPIs = () => {
             <TruckIcon width={20} height={20} />
           </div>
         </div>
-        <div className="stat-value">42</div>
-        <div className="stat-change">Actualizado hace 5 min</div>
+        <div className="stat-value">{stats.enTransito}</div>
+        <div className="stat-change">En camino a destino</div>
       </article>
 
       <article className="stat-card">
@@ -57,8 +94,8 @@ const KPIs = () => {
             <CheckCircleIcon />
           </div>
         </div>
-        <div className="stat-value">128</div>
-        <div className="stat-change positive">+6% semanal</div>
+        <div className="stat-value">{stats.entregadosSemana}</div>
+        <div className="stat-change">Últimos 7 días</div>
       </article>
 
       <article className="stat-card">
@@ -68,17 +105,37 @@ const KPIs = () => {
             <ClockIcon />
           </div>
         </div>
-        <div className="stat-value">2</div>
+        <div className="stat-value">{stats.pendientes}</div>
+        
         {/* Mostrar solo si el plan es PLUS */}
         {plan === "plus" && (
           <>
             <div className="stat-change" style={{ marginBottom: "0.5rem" }}>
-              Plan Plus (máx. 5 pendientes)
+              Plan Plus ({stats.pendientes}/{maxPendientes} pendientes)
             </div>
+
+            {/* Barra de progreso */}
+            {maxPendientes && (
+              <div style={{ 
+                width: '100%', 
+                height: '4px', 
+                backgroundColor: 'var(--background)', 
+                borderRadius: '2px',
+                overflow: 'hidden',
+                marginBottom: '0.75rem'
+              }}>
+                <div style={{
+                  width: `${Math.min(porcentajePendientes, 100)}%`,
+                  height: '100%',
+                  backgroundColor: porcentajePendientes >= 80 ? '#f59e0b' : '#3b82f6',
+                  transition: 'width 0.3s ease'
+                }} />
+              </div>
+            )}
 
             <div
               className="plan-badge-premium"
-              style={{ marginTop: "0.75rem", width: "100%", cursor: "pointer" }}
+              style={{ marginTop: "0.5rem", width: "100%", cursor: "pointer" }}
               onClick={() => setUpgradeModalOpen(true)}
               role="button"
               tabIndex={0}
@@ -93,6 +150,13 @@ const KPIs = () => {
               </div>
             </div>
           </>
+        )}
+
+        {/* Mostrar si es Premium */}
+        {plan === "premium" && (
+          <div className="stat-change" style={{ color: 'var(--success-color)' }}>
+            Plan Premium - Sin límites ✨
+          </div>
         )}
       </article>
     </>
