@@ -113,9 +113,7 @@ const Login = () => {
             {errors.username && (
               <div
                 style={{
-                  // padding: "0.75rem",
                   backgroundColor: "rgba(242, 242, 242, 0)",
-                  // border: "1px solid rgba(239, 68, 68, 0.3)",
                   borderRadius: "var(--radius-md)",
                   color: "#dc2626",
                   fontSize: "0.875rem",
