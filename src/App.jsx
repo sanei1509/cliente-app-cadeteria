@@ -1,6 +1,7 @@
-import { BrowserRouter, Routes, Route, Navigate, Outlet, Link } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Login from "./pages/Login/Login.jsx";
 import Register from "./pages/Register/Register.jsx";
+import NotFound from "./pages/NotFound/NotFound.jsx";
 import { store } from './store/store';
 import Dashboard from "./pages/Dashboard/dashboard.jsx";
 import DashboardAdmin from "./pages/DashboardAdmin/DashboardAdmin.jsx";
@@ -32,37 +33,23 @@ const PrivateAdmin = ({ children }) => {
   return children;
 };
 
-// Layout principal con navegación
-function Layout() {
-  return (
-    <div>
-      {/* nav mínima para probar */}
-      <nav style={{ padding: 12, borderBottom: "1px solid #eee" }}>
-        <Link to="/login">Login</Link>{" | "}
-        <Link to="/register">Register</Link>{" | "}
-        <Link to="/dashboard">Dashboard</Link>{" | "}
-        <Link to="/dashboardAdmin">DashboardAdmin</Link>
-      </nav>
-      <Outlet />
-    </div>
-  );
-}
-
 // Componente principal con todas las rutas
 export default function App() {
   return (
     <Provider store={store}>
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<Layout />}>
-            <Route index element={<Navigate to="/dashboard" replace />} />
-            <Route path="login" element={<Login />} />
-            <Route path="register" element={<Register />} />
+          {/* Rutas públicas */}
+          <Route index element={<Navigate to="/dashboard" replace />} />
+          <Route path="login" element={<Login />} />
+          <Route path="register" element={<Register />} />
 
-            {/* Rutas Privadas */}
-            <Route path="dashboard" element={<Private><Dashboard /></Private>} />
-            <Route path="dashboardAdmin" element={<PrivateAdmin><DashboardAdmin /></PrivateAdmin>} />
-          </Route>
+          {/* Rutas Privadas */}
+          <Route path="dashboard" element={<Private><Dashboard /></Private>} />
+          <Route path="dashboardAdmin" element={<PrivateAdmin><DashboardAdmin /></PrivateAdmin>} />
+
+          {/* Catch-all para 404 */}
+          <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
 
