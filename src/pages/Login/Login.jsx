@@ -20,8 +20,6 @@ const Login = () => {
     formState: { errors, isValid },
   } = useForm({ mode: "onChange" });
 
-  // const [username, setUsername] = useState("");
-  // const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
@@ -55,9 +53,6 @@ const Login = () => {
           dispatch(setUser(data.token?.user));
         }
 
-        // Mostrar toast de éxito
-        toast.success("¡Bienvenido! Inicio de sesión exitoso");
-
         // Redirigir según el rol del usuario
         const role = data.token?.user?.role;
         if (role === "admin") {
@@ -69,15 +64,15 @@ const Login = () => {
       } else {
         // Manejar errores de autenticación
         const errorData = await response.json();
-        const errorMsg = errorData.message || "Credenciales incorrectas";
+        console.log("Error de login:", errorData);
+        const errorMsg = "Credenciales incorrectas";
         setError(errorMsg);
-        toast.error(errorMsg);
       }
     } catch (error) {
       console.log(error);
       const errorMsg = "Error de conexión. Por favor, intenta nuevamente.";
       setError(errorMsg);
-      toast.error(errorMsg);
+      // toast.error(errorMsg);
     } finally {
       setIsSubmitting(false);
     }
@@ -199,7 +194,21 @@ const Login = () => {
           </div>
 
           {/* Mostrar mensaje de error si existe */}
-          {error && <div> {error}</div>}
+          {error && (
+            <div
+              style={{
+                // padding: "0.75rem",
+                backgroundColor: "rgba(242, 242, 242, 0)",
+                // border: "1px solid rgba(239, 68, 68, 0.3)",
+                borderRadius: "var(--radius-md)",
+                color: "#dc2626",
+                fontSize: "0.875rem",
+                marginBottom: "1rem",
+              }}
+            >
+              {error}
+            </div>
+          )}
 
           <button
             type="submit"
