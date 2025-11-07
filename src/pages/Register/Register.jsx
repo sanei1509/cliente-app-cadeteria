@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
+import { useForm } from "react-hook-form";
 import { setUser } from "../../features/userSlice";
 import { API_CESAR } from "../../api/config";
 import { toast } from 'react-toastify';
@@ -10,56 +11,23 @@ export default function Register() {
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
-  const [form, setForm] = useState({
-    fullName: "",
-    username: "",
-    email: "",  
-    phone: "",
-    password: "",
-    confirmPassword: "",
-    terms: false,
-  });
+  const {
+    register,
+    handleSubmit,
+    watch,
+    formState: { errors, isValid },
+  } = useForm({ mode: "onChange" });
 
-  const [errors, setErrors] = useState({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const onChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    // opcional: normalizar email a minúsculas
-    const v = name === "email" ? value.trim().toLowerCase() : value;
-    setForm((f) => ({ ...f, [name]: type === "checkbox" ? checked : v }));
-  };
+  const password = watch("password", "");
+  const confirmPassword = watch("confirmPassword", "");
 
-  const validate = () => {
-    const e = {};
-    if (!form.fullName.trim()) e.fullName = "Por favor ingresa tu nombre completo";
-    if (!form.username.trim() || form.username.length < 3)
-      e.username = "El nombre de usuario debe tener al menos 3 caracteres";
-
-    // validación de email
-    if (!form.email.trim()) {
-      e.email = "Por favor ingresa tu email";
-    } else {
-      // chequeo simple de formato
-      const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!re.test(form.email)) e.email = "Formato de email inválido";
-    }
-
-    if (!form.phone.trim()) e.phone = "Por favor ingresa un teléfono válido";
-    if (!form.password || form.password.length < 6)
-      e.password = "La contraseña debe tener al menos 6 caracteres";
-    if (form.password !== form.confirmPassword)
-      e.confirmPassword = "Las contraseñas no coinciden";
-    if (!form.terms) e.terms = "Debes aceptar los términos y condiciones";
-    setErrors(e);
-    return Object.keys(e).length === 0;
-  };
-
-  const onSubmit = async (e) => {
-    e.preventDefault();
-    if (!validate()) return;
+  const onSubmit = async (formData) => {
+    setIsSubmitting(true);
 
     // Separar nombre y apellido
-    const [nombre, ...resto] = form.fullName.trim().split(" ");
+    const [nombre, ...resto] = formData.fullName.trim().split(" ");
     const apellido = resto.length ? resto.join(" ") : "-";
 
     try {
@@ -67,17 +35,18 @@ export default function Register() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          username: form.username,
-          password: form.password,
+          username: formData.username,
+          password: formData.password,
           nombre,
           apellido,
-          email: form.email,
+          email: formData.email,
         }),
       });
 
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
         toast.error(`Error de registro: ${err.message || res.statusText}`);
+        setIsSubmitting(false);
         return;
       }
 
@@ -93,14 +62,14 @@ export default function Register() {
       }
       // Caso 2: Respuesta directa del usuario (sin token) - hacer login manual
       else if (data?.id && data?.username) {
-        
+
         try {
           const loginRes = await fetch(`${API_CESAR}/public/v1/login`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-              username: form.username,
-              password: form.password,
+              username: formData.username,
+              password: formData.password,
             }),
           });
 
@@ -139,6 +108,8 @@ export default function Register() {
       }
     } catch (error) {
       toast.error("Error de conexión. Intentá nuevamente.");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -157,104 +128,133 @@ export default function Register() {
         </div>
 
         {/* Registration Form */}
-        <form id="registerForm" className="auth-form" onSubmit={onSubmit}>
+        <form id="registerForm" className="auth-form" onSubmit={handleSubmit(onSubmit)}>
           <div className="form-group">
-            <label htmlFor="fullName" className="form-label">Nombre Completo</label>
+            <label htmlFor="fullName" className="form-label">Nombre Completo *</label>
             <input
               type="text"
               id="fullName"
-              name="fullName"
               className="form-input"
               placeholder="Juan Pérez"
-              required
               autoComplete="name"
-              value={form.fullName}
-              onChange={onChange}
+              {...register("fullName", {
+                required: "Por favor ingresa tu nombre completo",
+                minLength: {
+                  value: 3,
+                  message: "El nombre debe tener al menos 3 caracteres",
+                },
+              })}
             />
-            <span className="form-error">{errors.fullName}</span>
+            {errors.fullName && (
+              <span className="form-error">{errors.fullName.message}</span>
+            )}
           </div>
 
           <div className="form-group">
-            <label htmlFor="username" className="form-label">Nombre de Usuario</label>
+            <label htmlFor="username" className="form-label">Nombre de Usuario *</label>
             <input
               type="text"
               id="username"
-              name="username"
               className="form-input"
               placeholder="tu_usuario"
-              required
               autoComplete="username"
-              minLength={3}
-              value={form.username}
-              onChange={onChange}
+              {...register("username", {
+                required: "El nombre de usuario es obligatorio",
+                minLength: {
+                  value: 2,
+                  message: "El usuario debe tener al menos 2 caracteres",
+                },
+                maxLength: {
+                  value: 50,
+                  message: "El usuario debe tener como máximo 50 caracteres",
+                },
+              })}
             />
-            <span className="form-error">{errors.username}</span>
+            {errors.username && (
+              <span className="form-error">{errors.username.message}</span>
+            )}
           </div>
 
           <div className="form-group">
-            <label htmlFor="email" className="form-label">Email</label>
+            <label htmlFor="email" className="form-label">Email *</label>
             <input
               type="email"
               id="email"
-              name="email"
               className="form-input"
               placeholder="tu@email.com"
-              required
               autoComplete="email"
-              value={form.email}
-              onChange={onChange}
+              {...register("email", {
+                required: "Por favor ingresa tu email",
+                pattern: {
+                  value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+                  message: "Formato de email inválido",
+                },
+              })}
             />
-            <span className="form-error">{errors.email}</span>
+            {errors.email && (
+              <span className="form-error">{errors.email.message}</span>
+            )}
           </div>
 
           <div className="form-group">
-            <label htmlFor="phone" className="form-label">Teléfono</label>
+            <label htmlFor="phone" className="form-label">Teléfono *</label>
             <input
               type="tel"
               id="phone"
-              name="phone"
               className="form-input"
               placeholder="+54 11 1234-5678"
-              required
               autoComplete="tel"
-              value={form.phone}
-              onChange={onChange}
+              {...register("phone", {
+                required: "Por favor ingresa un teléfono válido",
+                minLength: {
+                  value: 8,
+                  message: "El teléfono debe tener al menos 8 dígitos",
+                },
+              })}
             />
-            <span className="form-error">{errors.phone}</span>
+            {errors.phone && (
+              <span className="form-error">{errors.phone.message}</span>
+            )}
           </div>
 
           <div className="form-group">
-            <label htmlFor="password" className="form-label">Contraseña</label>
+            <label htmlFor="password" className="form-label">Contraseña *</label>
             <input
               type="password"
               id="password"
-              name="password"
               className="form-input"
-              placeholder="Mínimo 6 caracteres"
-              required
+              placeholder="Mínimo 4 caracteres"
               autoComplete="new-password"
-              minLength={6}
-              value={form.password}
-              onChange={onChange}
+              {...register("password", {
+                required: "La contraseña es obligatoria",
+                minLength: {
+                  value: 4,
+                  message: "La contraseña debe tener al menos 4 caracteres",
+                },
+              })}
             />
-            <span className="form-error">{errors.password}</span>
+            {errors.password && (
+              <span className="form-error">{errors.password.message}</span>
+            )}
           </div>
 
           <div className="form-group">
-            <label htmlFor="confirmPassword" className="form-label">Confirmar Contraseña</label>
+            <label htmlFor="confirmPassword" className="form-label">Confirmar Contraseña *</label>
             <input
               type="password"
               id="confirmPassword"
-              name="confirmPassword"
               className="form-input"
               placeholder="Repite tu contraseña"
-              required
               autoComplete="new-password"
-              minLength={6}
-              value={form.confirmPassword}
-              onChange={onChange}
+              {...register("confirmPassword", {
+                required: "Debes confirmar tu contraseña",
+                validate: (value) =>
+                  value === password || "Las contraseñas no coinciden",
+              })}
             />
-            <span className="form-error">{errors.confirmPassword}</span>
+            {errors.confirmPassword && (
+              <span className="form-error">{errors.confirmPassword.message}</span>
+            )}
           </div>
 
           <div className="form-group">
@@ -262,10 +262,9 @@ export default function Register() {
               <input
                 type="checkbox"
                 id="terms"
-                name="terms"
-                checked={form.terms}
-                onChange={onChange}
-                required
+                {...register("terms", {
+                  required: "Debes aceptar los términos y condiciones",
+                })}
               />
               <label htmlFor="terms">
                 Acepto los <a href="#" target="_blank" rel="noreferrer">Términos y Condiciones</a>
@@ -273,15 +272,17 @@ export default function Register() {
                 <a href="#" target="_blank" rel="noreferrer">Política de Privacidad</a>
               </label>
             </div>
-            <span className="form-error">{errors.terms}</span>
+            {errors.terms && (
+              <span className="form-error">{errors.terms.message}</span>
+            )}
           </div>
 
           <button
             type="submit"
             className="btn btn-primary btn-full"
-            disabled={!form.password || !form.confirmPassword || form.password !== form.confirmPassword}
+            disabled={!isValid || !password || !confirmPassword || password !== confirmPassword || isSubmitting}
           >
-            Crear Cuenta
+            {isSubmitting ? "Creando cuenta..." : "Crear Cuenta"}
           </button>
         </form>
 

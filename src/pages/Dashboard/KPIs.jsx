@@ -9,12 +9,14 @@ import {
 } from "../../components/icons";
 import { selectUserPlan } from "../../features/userSlice";
 import UpgradePlanModal from "../../components/UpgradePlanModal";
+import { Spinner } from "../../components/Spinner";
 
 const KPIs = () => {
   const [upgradeModalOpen, setUpgradeModalOpen] = useState(false);
 
   // Obtener datos de Redux - usar allEnvios para que no cambien con filtros
   const allEnvios = useSelector((state) => state.envios.allEnvios);
+  const isLoading = useSelector((state) => state.envios.areEnviosLoading);
   const userPlan = useSelector(selectUserPlan);
   const plan = userPlan?.toLowerCase() || "plus";
 
@@ -24,23 +26,23 @@ const KPIs = () => {
   unaSemanaAtras.setDate(ahora.getDate() - 7);
 
   const total = allEnvios.length;
-  const enTransito = allEnvios.filter(e => e.estado === 'en_ruta').length;
-  const entregadosSemana = allEnvios.filter(e => {
-    if (e.estado !== 'entregado') return false;
+  const enTransito = allEnvios.filter((e) => e.estado === "en_ruta").length;
+  const entregadosSemana = allEnvios.filter((e) => {
+    if (e.estado !== "entregado") return false;
     const fechaEnvio = new Date(e.fechaActualizacion || e.fechaCreacion);
     return fechaEnvio >= unaSemanaAtras;
   }).length;
-  const pendientes = allEnvios.filter(e => e.estado === 'pendiente').length;
+  const pendientes = allEnvios.filter((e) => e.estado === "pendiente").length;
 
   const stats = {
     total,
     enTransito,
     entregadosSemana,
-    pendientes
+    pendientes,
   };
 
   // Límite de envíos pendientes según plan
-  const maxPendientes = plan === 'premium' ? null : 5;
+  const maxPendientes = plan === "premium" ? null : 5;
   const porcentajePendientes = maxPendientes
     ? Math.round((stats.pendientes / maxPendientes) * 100)
     : 0;
@@ -64,9 +66,19 @@ const KPIs = () => {
             <PackageIcon />
           </div>
         </div>
-        <div className="stat-value">{stats.total}</div>
+        <div className="stat-value">
+          {isLoading ? (
+            <Spinner color={"text-primary"} size={"spinner-border-md"} />
+          ) : (
+            stats.total
+          )}
+        </div>
         <div className="stat-change">
-          {stats.entregadosSemana} entregados esta semana
+          {/* {isLoading ? (
+            <Spinner color={"text-primary"} size={"spinner-border-sm"} />
+          ) : (
+            `${stats.entregadosSemana} entregados esta semana`
+          )} */}
         </div>
       </article>
 
@@ -77,7 +89,13 @@ const KPIs = () => {
             <TruckIcon width={20} height={20} />
           </div>
         </div>
-        <div className="stat-value">{stats.enTransito}</div>
+        <div className="stat-value">
+          {isLoading ? (
+            <Spinner color={"text-primary"} size={"spinner-border-md"} />
+          ) : (
+            stats.enTransito
+          )}
+        </div>
         <div className="stat-change">En camino a destino</div>
       </article>
 
@@ -88,7 +106,13 @@ const KPIs = () => {
             <CheckCircleIcon />
           </div>
         </div>
-        <div className="stat-value">{stats.entregadosSemana}</div>
+        <div className="stat-value">
+          {isLoading ? (
+            <Spinner color={"text-primary"} size={"spinner-border-md"} />
+          ) : (
+            stats.entregadosSemana
+          )}
+        </div>
         <div className="stat-change">Últimos 7 días</div>
       </article>
 
@@ -99,8 +123,14 @@ const KPIs = () => {
             <ClockIcon />
           </div>
         </div>
-        <div className="stat-value">{stats.pendientes}</div>
-        
+        <div className="stat-value">
+          {isLoading ? (
+            <Spinner color={"text-primary"} size={"spinner-border-md"} />
+          ) : (
+            stats.pendientes
+          )}
+        </div>
+
         {/* Mostrar solo si el plan es PLUS */}
         {plan === "plus" && (
           <>
@@ -110,20 +140,25 @@ const KPIs = () => {
 
             {/* Barra de progreso */}
             {maxPendientes && (
-              <div style={{ 
-                width: '100%', 
-                height: '4px', 
-                backgroundColor: 'var(--background)', 
-                borderRadius: '2px',
-                overflow: 'hidden',
-                marginBottom: '0.75rem'
-              }}>
-                <div style={{
-                  width: `${Math.min(porcentajePendientes, 100)}%`,
-                  height: '100%',
-                  backgroundColor: porcentajePendientes >= 80 ? '#f59e0b' : '#3b82f6',
-                  transition: 'width 0.3s ease'
-                }} />
+              <div
+                style={{
+                  width: "100%",
+                  height: "4px",
+                  backgroundColor: "var(--background)",
+                  borderRadius: "2px",
+                  overflow: "hidden",
+                  marginBottom: "0.75rem",
+                }}
+              >
+                <div
+                  style={{
+                    width: `${Math.min(porcentajePendientes, 100)}%`,
+                    height: "100%",
+                    backgroundColor:
+                      porcentajePendientes >= 80 ? "#f59e0b" : "#3b82f6",
+                    transition: "width 0.3s ease",
+                  }}
+                />
               </div>
             )}
 
@@ -148,7 +183,10 @@ const KPIs = () => {
 
         {/* Mostrar si es Premium */}
         {plan === "premium" && (
-          <div className="stat-change" style={{ color: 'var(--success-color)' }}>
+          <div
+            className="stat-change"
+            style={{ color: "var(--success-color)" }}
+          >
             Plan Premium - Sin límites ✨
           </div>
         )}

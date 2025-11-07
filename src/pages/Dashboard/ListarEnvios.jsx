@@ -5,6 +5,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { setEnvios, setEnviosLoading, updateEnvio } from "../../features/enviosSlice";
 import { useNavigate } from "react-router-dom";
 import Filtros from "./Filtros";
+import { Spinner } from "../../components/Spinner";
 
 
 const ListarEnvios = () => {
@@ -165,9 +166,17 @@ const ListarEnvios = () => {
 
   return (
     <>
+      <Filtros
+        filtroFecha={filtroFecha}
+        filtroEstado={filtroEstado}
+        onChangeFecha={setFiltroFecha}
+        onChangeEstado={setFiltroEstado}
+      />
+
       {isLoading && (
-        <div style={{ padding: "2rem", textAlign: "center" }}>
-          <p>Cargando envíos...</p>
+        <div style={{ padding: "2rem", textAlign: "center", display: "flex", justifyContent: "center", alignItems: "center", gap: "0.5rem" }}>
+          <Spinner color={"text-primary"} size={"spinner-border-md"} />
+          <span>Cargando envíos...</span>
         </div>
       )}
 
@@ -176,13 +185,6 @@ const ListarEnvios = () => {
           {error}
         </div>
       )}
-
-      <Filtros
-        filtroFecha={filtroFecha}
-        filtroEstado={filtroEstado}
-        onChangeFecha={setFiltroFecha}
-        onChangeEstado={setFiltroEstado}
-      />
 
       {!isLoading && !error && sortedEnvios.length === 0 && (
         <div

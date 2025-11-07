@@ -8,6 +8,7 @@ import { API_SANTI } from "../../api/config";
 import { API_CESAR } from "../../api/config";
 import { toast } from "react-toastify";
 import { useForm } from "react-hook-form";
+import { Spinner } from "../../components/Spinner";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -215,7 +216,14 @@ const Login = () => {
             className="btn btn-primary btn-full"
             disabled={!isValid || isSubmitting}
           >
-            {isSubmitting ? "Ingresando..." : "Iniciar Sesión"}
+            {isSubmitting ? (
+              <>
+                <Spinner color={"text-light"} size={"spinner-border-sm"} />
+                <span style={{ marginLeft: "0.5rem" }}>Ingresando...</span>
+              </>
+            ) : (
+              "Iniciar Sesión"
+            )}
           </button>
         </form>
 

@@ -1,8 +1,11 @@
 import { useState, useEffect } from "react";
+import { useForm } from "react-hook-form";
 import Modal from "./Modal";
-import { API_CESAR, API_SANTI } from "../../api/config";
+import { API_CESAR } from "../../api/config";
 import { useDispatch } from "react-redux";
 import { updateEnvio } from "../../features/enviosSlice";
+import { toast } from "react-toastify";
+import { Spinner } from "../../components/Spinner";
 
 /**
  * Modal para editar un envío existente
@@ -17,31 +20,34 @@ import { updateEnvio } from "../../features/enviosSlice";
 const EditarEnvioModal = ({ isOpen, onClose, envioId, onSuccess }) => {
   const dispatch = useDispatch();
 
-  const [formData, setFormData] = useState({
-    origenCalle: "",
-    origenNumero: "",
-    origenCiudad: "",
-    origenReferencia: "",
-    destinoCalle: "",
-    destinoNumero: "",
-    destinoCiudad: "",
-    destinoReferencia: "",
-    fechaRetiro: "",
-    horaRetiroAprox: "",
-    tamanoPaquete: "",
-    notas: "",
-    categoriaNombre: "",
-    categoriaDescripcion: "",
-  });
+  const {
+    register,
+    handleSubmit,
+    reset,
+    watch,
+    formState: { errors, isValid },
+  } = useForm({ mode: "onChange" });
 
+  const [categories, setCategories] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+
+  const notasValue = watch("notas", "");
+
+  // Cargar categorías al montar
+  useEffect(() => {
+    fetch(`${API_CESAR}/public/v1/categories`)
+      .then((res) => (res.ok ? res.json() : []))
+      .then((data) => setCategories(Array.isArray(data) ? data : []))
+      .catch(() => setCategories([]));
+  }, []);
 
   // Cargar datos del envío cuando se abre el modal
   useEffect(() => {
     if (isOpen && envioId) {
       cargarEnvio();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, envioId]);
 
   const cargarEnvio = () => {
@@ -60,7 +66,17 @@ const EditarEnvioModal = ({ isOpen, onClose, envioId, onSuccess }) => {
         return response.json();
       })
       .then((data) => {
-        setFormData({
+        // Extraer el ID de la categoría
+        let catId = "";
+        if (data.category) {
+          catId =
+            typeof data.category === "object"
+              ? data.category._id || data.category.id || ""
+              : data.category;
+        }
+
+        // Usar reset() para cargar los datos en el formulario
+        reset({
           origenCalle: data.origen?.calle || "",
           origenNumero: data.origen?.numero || "",
           origenCiudad: data.origen?.ciudad || "",
@@ -73,12 +89,11 @@ const EditarEnvioModal = ({ isOpen, onClose, envioId, onSuccess }) => {
           horaRetiroAprox: data.horaRetiroAprox || "",
           tamanoPaquete: data.tamanoPaquete || "",
           notas: data.notas || "",
-          categoriaNombre: data.categoria || "",
+          categoryId: catId,
         });
       })
       .catch((error) => {
-        console.error("Error al cargar envío:", error);
-        alert(error.message || "Error de conexión al cargar el envío");
+        toast.error(error.message || "Error de conexión al cargar el envío");
         onClose();
       })
       .finally(() => {
@@ -86,13 +101,7 @@ const EditarEnvioModal = ({ isOpen, onClose, envioId, onSuccess }) => {
       });
   };
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
+  const onSubmit = (formData) => {
     setIsSubmitting(true);
 
     const token = localStorage.getItem("token");
@@ -108,11 +117,14 @@ const EditarEnvioModal = ({ isOpen, onClose, envioId, onSuccess }) => {
       formData.origenReferencia
     ) {
       payload.origen = {};
-      if (formData.origenCalle) payload.origen.calle = formData.origenCalle;
-      if (formData.origenNumero) payload.origen.numero = formData.origenNumero;
-      if (formData.origenCiudad) payload.origen.ciudad = formData.origenCiudad;
+      if (formData.origenCalle)
+        payload.origen.calle = formData.origenCalle.trim();
+      if (formData.origenNumero)
+        payload.origen.numero = formData.origenNumero.trim();
+      if (formData.origenCiudad)
+        payload.origen.ciudad = formData.origenCiudad.trim();
       if (formData.origenReferencia)
-        payload.origen.referencia = formData.origenReferencia;
+        payload.origen.referencia = formData.origenReferencia.trim();
     }
 
     // Destino
@@ -123,29 +135,26 @@ const EditarEnvioModal = ({ isOpen, onClose, envioId, onSuccess }) => {
       formData.destinoReferencia
     ) {
       payload.destino = {};
-      if (formData.destinoCalle) payload.destino.calle = formData.destinoCalle;
+      if (formData.destinoCalle)
+        payload.destino.calle = formData.destinoCalle.trim();
       if (formData.destinoNumero)
-        payload.destino.numero = formData.destinoNumero;
+        payload.destino.numero = formData.destinoNumero.trim();
       if (formData.destinoCiudad)
-        payload.destino.ciudad = formData.destinoCiudad;
+        payload.destino.ciudad = formData.destinoCiudad.trim();
       if (formData.destinoReferencia)
-        payload.destino.referencia = formData.destinoReferencia;
+        payload.destino.referencia = formData.destinoReferencia.trim();
     }
 
     // Otros campos
     if (formData.fechaRetiro) payload.fechaRetiro = formData.fechaRetiro;
     if (formData.horaRetiroAprox)
-      payload.horaRetiroAprox = formData.horaRetiroAprox;
+      payload.horaRetiroAprox = formData.horaRetiroAprox.trim();
     if (formData.tamanoPaquete) payload.tamanoPaquete = formData.tamanoPaquete;
-    if (formData.notas) payload.notas = formData.notas;
+    if (formData.notas) payload.notas = formData.notas.trim();
 
     // Categoría
-    if (formData.categoriaNombre || formData.categoriaDescripcion) {
-      payload.categoria = {};
-      if (formData.categoriaNombre)
-        payload.categoria.nombre = formData.categoriaNombre;
-      if (formData.categoriaDescripcion)
-        payload.categoria.descripcion = formData.categoriaDescripcion;
+    if (formData.categoryId) {
+      payload.categoryId = formData.categoryId;
     }
 
     fetch(`${API_CESAR}/v1/envios/${envioId}`, {
@@ -173,21 +182,19 @@ const EditarEnvioModal = ({ isOpen, onClose, envioId, onSuccess }) => {
         // Si el backend devolvió el envío actualizado, úsalo; si no, usamos lo enviado
         const updatedEnvio = data ?? payload;
 
-        // 🔥 Actualizar el store global para re-render inmediato en la lista
+        // Actualizar el store global para re-render inmediato en la lista
         dispatch(updateEnvio({ id: envioId, updatedEnvio }));
 
-        alert("Envío actualizado exitosamente");
+        toast.success("Envío actualizado exitosamente");
+
         onClose();
 
         // Opcional: si querés además refrescar desde el server
         if (onSuccess) onSuccess();
       })
       .catch((error) => {
-        console.error("Error al actualizar envío:", error);
-        alert(
-          `Error: ${
-            error.message || "Error de conexión. Por favor, intenta nuevamente."
-          }`
+        toast.error(
+          error.message || "Error de conexión. Por favor, intenta nuevamente."
         );
       })
       .finally(() => {
@@ -207,7 +214,7 @@ const EditarEnvioModal = ({ isOpen, onClose, envioId, onSuccess }) => {
           <p>Cargando datos del envío...</p>
         </div>
       ) : (
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit(onSubmit)}>
           {/* Origen */}
           <div style={{ marginBottom: "1.5rem" }}>
             <h3
@@ -227,43 +234,82 @@ const EditarEnvioModal = ({ isOpen, onClose, envioId, onSuccess }) => {
               }}
             >
               <div className="form-group">
-                <label className="form-label">Calle</label>
+                <label className="form-label">Calle *</label>
                 <input
                   type="text"
-                  name="origenCalle"
                   className="form-input"
-                  value={formData.origenCalle}
-                  onChange={handleChange}
+                  {...register("origenCalle", {
+                    required: "La calle de origen es requerida",
+                    minLength: {
+                      value: 3,
+                      message: "La calle debe tener al menos 3 caracteres",
+                    },
+                  })}
                 />
+                {errors.origenCalle && (
+                  <div
+                    style={{
+                      color: "#dc2626",
+                      fontSize: "0.875rem",
+                      marginTop: "0.25rem",
+                    }}
+                  >
+                    {errors.origenCalle.message}
+                  </div>
+                )}
               </div>
               <div className="form-group">
-                <label className="form-label">Número</label>
+                <label className="form-label">Número *</label>
                 <input
                   type="text"
-                  name="origenNumero"
                   className="form-input"
-                  value={formData.origenNumero}
-                  onChange={handleChange}
+                  {...register("origenNumero", {
+                    required: "El número de origen es requerido",
+                  })}
                 />
+                {errors.origenNumero && (
+                  <div
+                    style={{
+                      color: "#dc2626",
+                      fontSize: "0.875rem",
+                      marginTop: "0.25rem",
+                    }}
+                  >
+                    {errors.origenNumero.message}
+                  </div>
+                )}
               </div>
               <div className="form-group">
-                <label className="form-label">Ciudad</label>
+                <label className="form-label">Ciudad *</label>
                 <input
                   type="text"
-                  name="origenCiudad"
                   className="form-input"
-                  value={formData.origenCiudad}
-                  onChange={handleChange}
+                  {...register("origenCiudad", {
+                    required: "La ciudad de origen es requerida",
+                    minLength: {
+                      value: 3,
+                      message: "La ciudad debe tener al menos 3 caracteres",
+                    },
+                  })}
                 />
+                {errors.origenCiudad && (
+                  <div
+                    style={{
+                      color: "#dc2626",
+                      fontSize: "0.875rem",
+                      marginTop: "0.25rem",
+                    }}
+                  >
+                    {errors.origenCiudad.message}
+                  </div>
+                )}
               </div>
               <div className="form-group">
                 <label className="form-label">Referencia</label>
                 <input
                   type="text"
-                  name="origenReferencia"
                   className="form-input"
-                  value={formData.origenReferencia}
-                  onChange={handleChange}
+                  {...register("origenReferencia")}
                 />
               </div>
             </div>
@@ -288,43 +334,82 @@ const EditarEnvioModal = ({ isOpen, onClose, envioId, onSuccess }) => {
               }}
             >
               <div className="form-group">
-                <label className="form-label">Calle</label>
+                <label className="form-label">Calle *</label>
                 <input
                   type="text"
-                  name="destinoCalle"
                   className="form-input"
-                  value={formData.destinoCalle}
-                  onChange={handleChange}
+                  {...register("destinoCalle", {
+                    required: "La calle de destino es requerida",
+                    minLength: {
+                      value: 3,
+                      message: "La calle debe tener al menos 3 caracteres",
+                    },
+                  })}
                 />
+                {errors.destinoCalle && (
+                  <div
+                    style={{
+                      color: "#dc2626",
+                      fontSize: "0.875rem",
+                      marginTop: "0.25rem",
+                    }}
+                  >
+                    {errors.destinoCalle.message}
+                  </div>
+                )}
               </div>
               <div className="form-group">
-                <label className="form-label">Número</label>
+                <label className="form-label">Número *</label>
                 <input
                   type="text"
-                  name="destinoNumero"
                   className="form-input"
-                  value={formData.destinoNumero}
-                  onChange={handleChange}
+                  {...register("destinoNumero", {
+                    required: "El número de destino es requerido",
+                  })}
                 />
+                {errors.destinoNumero && (
+                  <div
+                    style={{
+                      color: "#dc2626",
+                      fontSize: "0.875rem",
+                      marginTop: "0.25rem",
+                    }}
+                  >
+                    {errors.destinoNumero.message}
+                  </div>
+                )}
               </div>
               <div className="form-group">
-                <label className="form-label">Ciudad</label>
+                <label className="form-label">Ciudad *</label>
                 <input
                   type="text"
-                  name="destinoCiudad"
                   className="form-input"
-                  value={formData.destinoCiudad}
-                  onChange={handleChange}
+                  {...register("destinoCiudad", {
+                    required: "La ciudad de destino es requerida",
+                    minLength: {
+                      value: 3,
+                      message: "La ciudad debe tener al menos 3 caracteres",
+                    },
+                  })}
                 />
+                {errors.destinoCiudad && (
+                  <div
+                    style={{
+                      color: "#dc2626",
+                      fontSize: "0.875rem",
+                      marginTop: "0.25rem",
+                    }}
+                  >
+                    {errors.destinoCiudad.message}
+                  </div>
+                )}
               </div>
               <div className="form-group">
                 <label className="form-label">Referencia</label>
                 <input
                   type="text"
-                  name="destinoReferencia"
                   className="form-input"
-                  value={formData.destinoReferencia}
-                  onChange={handleChange}
+                  {...register("destinoReferencia")}
                 />
               </div>
             </div>
@@ -349,79 +434,133 @@ const EditarEnvioModal = ({ isOpen, onClose, envioId, onSuccess }) => {
               }}
             >
               <div className="form-group">
-                <label className="form-label">Fecha de Retiro</label>
+                <label className="form-label">Fecha de Retiro *</label>
                 <input
                   type="date"
-                  name="fechaRetiro"
                   className="form-input"
-                  value={formData.fechaRetiro}
-                  onChange={handleChange}
+                  {...register("fechaRetiro", {
+                    required: "La fecha de retiro es requerida",
+                    validate: {
+                      future: (value) => {
+                        if (!value) return true;
+                        const selected = new Date(value);
+                        const now = new Date();
+                        now.setHours(0, 0, 0, 0);
+                        return (
+                          selected >= now ||
+                          "La fecha de retiro debe ser una fecha futura"
+                        );
+                      },
+                    },
+                  })}
                 />
+                {errors.fechaRetiro && (
+                  <div
+                    style={{
+                      color: "#dc2626",
+                      fontSize: "0.875rem",
+                      marginTop: "0.25rem",
+                    }}
+                  >
+                    {errors.fechaRetiro.message}
+                  </div>
+                )}
               </div>
               <div className="form-group">
-                <label className="form-label">Hora Aproximada</label>
+                <label className="form-label">Hora Aproximada *</label>
                 <input
                   type="text"
-                  name="horaRetiroAprox"
                   className="form-input"
-                  value={formData.horaRetiroAprox}
-                  onChange={handleChange}
                   placeholder="14:30"
+                  {...register("horaRetiroAprox", {
+                    required: "La hora aproximada es requerida",
+                    pattern: {
+                      value: /^([01]\d|2[0-3]):[0-5]\d$/,
+                      message: "Hora inválida (formato HH:mm)",
+                    },
+                  })}
                 />
+                {errors.horaRetiroAprox && (
+                  <div
+                    style={{
+                      color: "#dc2626",
+                      fontSize: "0.875rem",
+                      marginTop: "0.25rem",
+                    }}
+                  >
+                    {errors.horaRetiroAprox.message}
+                  </div>
+                )}
               </div>
               <div className="form-group">
-                <label className="form-label">Tamaño</label>
+                <label className="form-label">Tamaño *</label>
                 <select
-                  name="tamanoPaquete"
                   className="form-input"
-                  value={formData.tamanoPaquete}
-                  onChange={handleChange}
+                  {...register("tamanoPaquete", {
+                    required: "El tamaño del paquete es requerido",
+                  })}
                 >
                   <option value="">-- Seleccionar --</option>
                   <option value="chico">Chico</option>
                   <option value="mediano">Mediano</option>
                   <option value="grande">Grande</option>
                 </select>
+                {errors.tamanoPaquete && (
+                  <div
+                    style={{
+                      color: "#dc2626",
+                      fontSize: "0.875rem",
+                      marginTop: "0.25rem",
+                    }}
+                  >
+                    {errors.tamanoPaquete.message}
+                  </div>
+                )}
               </div>
               <div className="form-group">
                 <label className="form-label">Categoría</label>
-                <input
-                  type="text"
-                  name="categoriaNombre"
-                  className="form-input"
-                  value={formData.categoriaNombre}
-                  onChange={handleChange}
-                />
-              </div>
-              <div className="form-group" style={{ gridColumn: "1 / -1" }}>
-                <label className="form-label">Descripción Categoría</label>
-                <input
-                  type="text"
-                  name="categoriaDescripcion"
-                  className="form-input"
-                  value={formData.categoriaDescripcion}
-                  onChange={handleChange}
-                />
+                <select className="form-input" {...register("categoryId")}>
+                  <option value="">-- Seleccionar --</option>
+                  {categories.map((cat) => (
+                    <option key={cat._id || cat.id} value={cat._id || cat.id}>
+                      {cat.name}
+                    </option>
+                  ))}
+                </select>
               </div>
               <div className="form-group" style={{ gridColumn: "1 / -1" }}>
                 <label className="form-label">Notas</label>
                 <textarea
-                  name="notas"
                   className="form-input"
                   rows="3"
-                  value={formData.notas}
-                  onChange={handleChange}
-                  maxLength="500"
+                  maxLength="100"
+                  {...register("notas", {
+                    maxLength: {
+                      value: 100,
+                      message: "Las notas no pueden superar los 100 caracteres",
+                    },
+                  })}
                 />
                 <div
                   style={{
                     fontSize: "0.85rem",
-                    color: "var(--text-secondary)",
+                    color: errors.notas ? "#dc2626" : "var(--text-secondary)",
                     marginTop: "0.25rem",
                   }}
                 >
-                  {formData.notas.length}/500 caracteres
+                  {notasValue.length}/100 caracteres
                 </div>
+                {errors.notas && (
+                  <div
+                    style={{
+                      color: "#dc2626",
+                      fontSize: "0.875rem",
+                      marginTop: "0.25rem",
+                    }}
+                  >
+                    {errors.notas.message}
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -439,9 +578,16 @@ const EditarEnvioModal = ({ isOpen, onClose, envioId, onSuccess }) => {
             <button
               type="submit"
               className="btn btn-primary btn-full"
-              disabled={isSubmitting}
+              disabled={!isValid || isSubmitting}
             >
-              {isSubmitting ? "Guardando..." : "Guardar Cambios"}
+              {isSubmitting ? (
+                <>
+                  <Spinner color={"text-light"} size={"spinner-border-sm"} />
+                  <span style={{ marginLeft: "0.5rem" }}>Guardando...</span>
+                </>
+              ) : (
+                "Guardar Cambios"
+              )}
             </button>
           </div>
         </form>
