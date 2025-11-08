@@ -10,6 +10,7 @@ import {
 import { selectUserPlan } from "../../features/userSlice";
 import UpgradePlanModal from "../../components/UpgradePlanModal";
 import { Spinner } from "../../components/Spinner";
+import ChartEntregados10Dias from "../../components/charts/ChartEntregados10Dias";
 
 const KPIs = () => {
   const [upgradeModalOpen, setUpgradeModalOpen] = useState(false);
@@ -52,13 +53,16 @@ const KPIs = () => {
   };
 
   return (
-    <>
-      <UpgradePlanModal
-        isOpen={upgradeModalOpen}
-        onClose={() => setUpgradeModalOpen(false)}
-        onUpgradeSuccess={handleUpgradeSuccess}
-      />
+  <>
+    <UpgradePlanModal
+      isOpen={upgradeModalOpen}
+      onClose={() => setUpgradeModalOpen(false)}
+      onUpgradeSuccess={handleUpgradeSuccess}
+    />
 
+    {/* Contenedor de las tarjetas */}
+    <section className="kpis-grid">
+      {/* 1 */}
       <article className="stat-card">
         <div className="stat-header">
           <span className="stat-label">Envíos totales</span>
@@ -73,15 +77,10 @@ const KPIs = () => {
             stats.total
           )}
         </div>
-        <div className="stat-change">
-          {/* {isLoading ? (
-            <Spinner color={"text-primary"} size={"spinner-border-sm"} />
-          ) : (
-            `${stats.entregadosSemana} entregados esta semana`
-          )} */}
-        </div>
+        <div className="stat-change" />
       </article>
 
+      {/* 2 */}
       <article className="stat-card">
         <div className="stat-header">
           <span className="stat-label">En tránsito</span>
@@ -99,6 +98,7 @@ const KPIs = () => {
         <div className="stat-change">En camino a destino</div>
       </article>
 
+      {/* 3 */}
       <article className="stat-card">
         <div className="stat-header">
           <span className="stat-label">Entregados (semana)</span>
@@ -116,6 +116,7 @@ const KPIs = () => {
         <div className="stat-change">Últimos 7 días</div>
       </article>
 
+      {/* 4 */}
       <article className="stat-card">
         <div className="stat-header">
           <span className="stat-label">Envíos pendientes</span>
@@ -131,14 +132,12 @@ const KPIs = () => {
           )}
         </div>
 
-        {/* Mostrar solo si el plan es PLUS */}
         {plan === "plus" && (
           <>
             <div className="stat-change" style={{ marginBottom: "0.5rem" }}>
               Plan Plus ({stats.pendientes}/{maxPendientes} pendientes)
             </div>
 
-            {/* Barra de progreso */}
             {maxPendientes && (
               <div
                 style={{
@@ -181,18 +180,43 @@ const KPIs = () => {
           </>
         )}
 
-        {/* Mostrar si es Premium */}
         {plan === "premium" && (
-          <div
-            className="stat-change"
-            style={{ color: "var(--success-color)" }}
-          >
+          <div className="stat-change" style={{ color: "var(--success-color)" }}>
             Plan Premium - Sin límites ✨
           </div>
         )}
       </article>
-    </>
-  );
+
+      {/* 5: Tarjeta con el gráfico (zoomable) */}
+{/* 5: Tarjeta con el gráfico (zoom grande) */}
+<article className="stat-card stat-card--wide stat-card--hover-zoom">
+  <div className="stat-header">
+    <span
+      className="stat-label"
+      style={{ display: "block", width: "100%", textAlign: "center" }}
+    >
+      
+    </span>
+  </div>
+  <div className="stat-value" style={{ fontSize: "0.9rem" }} />
+  
+  {/* WRAPPER para aplicar el zoom interno */}
+  <div className="chart-zoom">
+    <div className="chart-zoom__inner">
+      <ChartEntregados10Dias
+        envios={allEnvios}
+        isLoading={isLoading}
+        alto={220}
+      />
+    </div>
+  </div>
+</article>
+
+    </section>
+  </>
+);
+
+
 };
 
 export default KPIs;
