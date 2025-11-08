@@ -10,6 +10,7 @@ const Navbar = () => {
     const dispatch = useDispatch();
     const [dropdownOpen, setDropdownOpen] = useState(false);
     const [cancelPlanModalOpen, setCancelPlanModalOpen] = useState(false);
+    const [imageError, setImageError] = useState(false);
     const dropdownRef = useRef(null);
 
     // Obtener datos del usuario desde Redux
@@ -19,6 +20,7 @@ const Navbar = () => {
     const userName = user?.nombre || user?.username || "Usuario";
     const userEmail = user?.email || "";
     const planDisplay = userPlan || "Plus";
+    const userImage = user?.imageUrl || null;
 
     // Cerrar dropdown al hacer clic fuera
     useEffect(() => {
@@ -36,6 +38,11 @@ const Navbar = () => {
             document.removeEventListener("mousedown", handleClickOutside);
         };
     }, [dropdownOpen]);
+
+    // Reset imageError cuando cambia la imagen
+    useEffect(() => {
+        setImageError(false);
+    }, [userImage]);
 
     // Generar iniciales del nombre (primeras letras de nombre y apellido)
     const getInitials = (name) => {
@@ -78,7 +85,18 @@ const Navbar = () => {
             onClick={() => setDropdownOpen(!dropdownOpen)}
             aria-expanded={dropdownOpen}
           >
-            <div className="navbar-avatar">{userInitials}</div>
+            {/* Mostrar imagen o iniciales */}
+            {userImage && !imageError ? (
+              <img 
+                src={userImage} 
+                alt={userName}
+                className="navbar-avatar navbar-avatar-image"
+                onError={() => setImageError(true)}
+              />
+            ) : (
+              <div className="navbar-avatar">{userInitials}</div>
+            )}
+            
             <span className="navbar-username">{userName}</span>
             <svg
               className={`dropdown-arrow ${dropdownOpen ? 'open' : ''}`}
@@ -101,8 +119,38 @@ const Navbar = () => {
           {dropdownOpen && (
             <div className="navbar-dropdown">
               <div className="dropdown-user-info">
-                <div className="dropdown-user-name">{userName}</div>
-                <div className="dropdown-user-email">{userEmail}</div>
+                {/* Avatar en el dropdown */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
+                  {userImage && !imageError ? (
+                    <img 
+                      src={userImage} 
+                      alt={userName}
+                      style={{
+                        width: '48px',
+                        height: '48px',
+                        borderRadius: '50%',
+                        objectFit: 'cover',
+                        border: '2px solid var(--border-color)'
+                      }}
+                      onError={() => setImageError(true)}
+                    />
+                  ) : (
+                    <div 
+                      className="navbar-avatar" 
+                      style={{ 
+                        width: '48px', 
+                        height: '48px', 
+                        fontSize: '1.2rem' 
+                      }}
+                    >
+                      {userInitials}
+                    </div>
+                  )}
+                  <div>
+                    <div className="dropdown-user-name">{userName}</div>
+                    <div className="dropdown-user-email">{userEmail}</div>
+                  </div>
+                </div>
               </div>
               <div className="dropdown-divider"></div>
               {userPlan.toLowerCase() === 'premium' && (

@@ -1990,3 +1990,18 @@ a:hover {
 .upgrade-btn:active {
   transform: translateY(0);
 }
+
+.navbar-avatar-image {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--border-color);
+}
+
+.navbar-avatar {
+  /* Tus estilos existentes... */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}

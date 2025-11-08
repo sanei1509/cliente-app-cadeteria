@@ -19,9 +19,29 @@ export default function Register() {
   } = useForm({ mode: "onChange" });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [file, setFile] = useState(null);
 
   const password = watch("password", "");
   const confirmPassword = watch("confirmPassword", "");
+
+  const handleUploadFile = (evt) => {
+    const selectedFile = evt.target.files[0];
+    if (selectedFile) {
+      // Validar tamaño (max 5MB)
+      if (selectedFile.size > 5 * 1024 * 1024) {
+        toast.error("La imagen no debe superar los 5MB");
+        evt.target.value = null;
+        return;
+      }
+      // Validar tipo
+      if (!selectedFile.type.startsWith('image/')) {
+        toast.error("Solo se permiten archivos de imagen");
+        evt.target.value = null;
+        return;
+      }
+      setFile(selectedFile);
+    }
+  };
 
   const onSubmit = async (formData) => {
     setIsSubmitting(true);
@@ -29,6 +49,40 @@ export default function Register() {
     // Separar nombre y apellido
     const [nombre, ...resto] = formData.fullName.trim().split(" ");
     const apellido = resto.length ? resto.join(" ") : "-";
+
+    let imageUrl = null;
+
+    // Subir la imagen a Cloudinary si existe
+    if (file) {
+      const data = new FormData();
+      data.append("upload_preset", "Cadeteria");
+      data.append("file", file);
+
+      const cloudinaryURL = "https://api.cloudinary.com/v1_1/dvu1wtvuq/image/upload";
+
+      try {
+        toast.info("Subiendo imagen...");
+        const response = await fetch(cloudinaryURL, {
+          method: "POST",
+          body: data,
+        });
+
+        if (response.ok) {
+          const cloudData = await response.json();
+          imageUrl = cloudData.url;
+          console.log("Imagen subida a Cloudinary:", imageUrl);
+        } else {
+          toast.error("Error al subir la imagen");
+          setIsSubmitting(false);
+          return;
+        }
+      } catch (error) {
+        console.error("Error al subir imagen:", error);
+        toast.error("Error al subir la imagen");
+        setIsSubmitting(false);
+        return;
+      }
+    }
 
     try {
       const res = await fetch(`${API_CESAR}/public/v1/signup`, {
@@ -40,6 +94,7 @@ export default function Register() {
           nombre,
           apellido,
           email: formData.email,
+          imageUrl, // Agregar la URL de la imagen
         }),
       });
 
@@ -62,7 +117,6 @@ export default function Register() {
       }
       // Caso 2: Respuesta directa del usuario (sin token) - hacer login manual
       else if (data?.id && data?.username) {
-
         try {
           const loginRes = await fetch(`${API_CESAR}/public/v1/login`, {
             method: "POST",
@@ -175,6 +229,24 @@ export default function Register() {
             )}
           </div>
 
+          {/* Imagen (opcional) */}
+          <div className="form-group">
+            <label htmlFor="imageFile" className="form-label">
+              Imagen o Logo (opcional)
+              {file && <span style={{ marginLeft: '0.5rem', color: 'var(--success-color)', fontSize: '0.85rem' }}>✓ {file.name}</span>}
+            </label>
+            <input
+              type="file"
+              id="imageFile"
+              className="form-input"
+              accept="image/*"
+              onChange={handleUploadFile}
+            />
+            <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+              Máximo 5MB - JPG, PNG, GIF
+            </span>
+          </div>
+
           <div className="form-group">
             <label htmlFor="email" className="form-label">Email *</label>
             <input
@@ -255,6 +327,7 @@ export default function Register() {
             {errors.confirmPassword && (
               <span className="form-error">{errors.confirmPassword.message}</span>
             )}
+
           </div>
 
           <div className="form-group">
