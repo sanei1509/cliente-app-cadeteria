@@ -1999,9 +1999,51 @@ a:hover {
   border: 2px solid var(--border-color);
 }
 
+/* 30% más grande cuando hay imagen */
+.navbar-avatar-image--large {
+  width: 65px;   
+  height: 65px;  
+}
+
 .navbar-avatar {
   /* Tus estilos existentes... */
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+/* Barra de herramientas de filtros */
+.filters-toolbar {
+  display: flex;
+  justify-content: flex-start; /* botón a la izquierda */
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
+/* Botón “limpiar filtros” */
+.btn-clear {
+  appearance: none;
+  border: 1px solid var(--border-color, #d1d5db);
+  background: var(--clear-bg, #eaecef);         /* un poquito más oscuro que #f3f4f6 */
+  color: var(--clear-fg, #111827);
+  padding: 0.45rem 0.8rem;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: filter 0.15s ease, transform 0.02s ease, box-shadow 0.15s ease;
+  box-shadow: 0 1px 2px rgba(0,0,0,.05);
+}
+
+.btn-clear:hover:not(:disabled) {
+  filter: brightness(0.98);
+}
+
+.btn-clear:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.btn-clear.is-disabled,
+.btn-clear:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }

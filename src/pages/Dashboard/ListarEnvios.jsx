@@ -1,11 +1,12 @@
 import EditarEnvioModal from "./EditarEnvioModal";
 import { API_CESAR } from "../../api/config";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { setEnvios, setEnviosLoading, updateEnvio } from "../../features/enviosSlice";
 import { useNavigate } from "react-router-dom";
 import Filtros from "./Filtros";
 import { Spinner } from "../../components/Spinner";
+import { toast } from 'react-toastify';
 
 
 const ListarEnvios = () => {
@@ -17,6 +18,10 @@ const ListarEnvios = () => {
   // Estados de filtros (cliente)
   const [filtroFecha, setFiltroFecha] = useState('historico'); // 'historico' | 'semana' | 'mes'
   const [filtroEstado, setFiltroEstado] = useState('todos');     // 'todos' | 'pendiente' | 'en_ruta' | 'entregado' | 'cancelado'
+  const limpiarFiltros = () => {
+    setFiltroFecha('historico');
+    setFiltroEstado('todos');
+  };
 
 
   const dispatch = useDispatch();
@@ -63,9 +68,10 @@ const ListarEnvios = () => {
   // Función para formatear fecha
   const formatearFecha = (fecha) => {
     if (!fecha) return "-";
-    const date = new Date(fecha);
-    return date.toLocaleDateString("es-UY");
+    const d = parseLocalDateOnly(fecha);
+    return d.toLocaleDateString("es-UY");
   };
+
 
   // Función para obtener clase del badge según estado
   const getBadgeClass = (estado) => {
@@ -91,6 +97,7 @@ const ListarEnvios = () => {
 
   const handleCancelar = (id) => {
     if (!window.confirm("¿Estás seguro de cancelar este envío?")) return;
+    toast.success("Envío cancelado exitosamente");
 
     setCancelingIds((prev) => new Set(prev).add(id));
     const token = localStorage.getItem("token");
@@ -134,34 +141,92 @@ const ListarEnvios = () => {
   };
 
   // Aplicar filtros del lado del cliente
-  const enviosFiltrados = allEnvios.filter((e) => {
-    // Filtro por estado
-    if (filtroEstado !== 'todos' && e.estado !== filtroEstado) {
-      return false;
-    }
+  // const enviosFiltrados = allEnvios.filter((e) => {
+  //   // Filtro por estado
+  //   if (filtroEstado !== 'todos' && e.estado !== filtroEstado) {
+  //     return false;
+  //   }
 
-    // Filtro por fecha
-    if (filtroFecha !== 'historico') {
-      const fechaEnvio = new Date(e.fechaRetiro || e.fecha || e.createdAt);
-      const ahora = new Date();
+  //   // Filtro por fecha
+  //   if (filtroFecha !== 'historico') {
+  //     const fechaEnvio = new Date(e.fechaRetiro || e.fecha || e.createdAt);
+  //     const ahora = new Date();
 
-      if (filtroFecha === 'semana') {
+  //     if (filtroFecha === 'semana') {
+  //       const unaSemanaAtras = new Date(ahora);
+  //       unaSemanaAtras.setDate(ahora.getDate() - 7);
+  //       if (fechaEnvio < unaSemanaAtras) return false;
+  //     } else if (filtroFecha === 'mes') {
+  //       const unMesAtras = new Date(ahora);
+  //       unMesAtras.setMonth(ahora.getMonth() - 1);
+  //       if (fechaEnvio < unMesAtras) return false;
+  //     }
+  //   }
+
+  //   return true;
+  // });
+
+  // // Ordenar por fecha (más futura arriba). Usa fechaRetiro > fecha > createdAt.
+  // const getDate = (e) => new Date(e.fechaRetiro || e.fecha || e.createdAt || 0);
+  // const sortedEnvios = enviosFiltrados.slice().sort((a, b) => getDate(b) - getDate(a));
+
+  const sortedEnvios = useMemo(() => {
+    const ahora = new Date();
+
+    // 1) Prioridad de estados (menor = más arriba)
+    const STATUS_RANK = {
+      pendiente: 1,
+      en_ruta: 2,
+      entregado: 3,
+      cancelado: 4,
+    };
+    const rank = (s) => STATUS_RANK[s] ?? 99;
+
+    // 2) Filtro por rango de fechas
+    const dentroDeRango = (fechaStr) => {
+      if (filtroFecha === "historico") return true;
+
+      const fechaEnvio = parseLocalDateOnly(fechaStr || "");
+      if (Number.isNaN(fechaEnvio?.getTime?.())) return false;
+
+      if (filtroFecha === "semana") {
         const unaSemanaAtras = new Date(ahora);
         unaSemanaAtras.setDate(ahora.getDate() - 7);
-        if (fechaEnvio < unaSemanaAtras) return false;
-      } else if (filtroFecha === 'mes') {
+        return fechaEnvio >= unaSemanaAtras;
+      }
+
+      if (filtroFecha === "mes") {
         const unMesAtras = new Date(ahora);
         unMesAtras.setMonth(ahora.getMonth() - 1);
-        if (fechaEnvio < unMesAtras) return false;
+        return fechaEnvio >= unMesAtras;
       }
-    }
 
-    return true;
-  });
+      return true;
+    };
 
-  // Ordenar por fecha (más futura arriba). Usa fechaRetiro > fecha > createdAt.
-  const getDate = (e) => new Date(e.fechaRetiro || e.fecha || e.createdAt || 0);
-  const sortedEnvios = enviosFiltrados.slice().sort((a, b) => getDate(b) - getDate(a));
+    // 3) Filtrar por estado + fecha
+    const fil = (allEnvios || []).filter((e) => {
+      if (filtroEstado !== "todos" && e.estado !== filtroEstado) return false;
+      const baseFecha = e.fechaRetiro || e.fecha || e.createdAt;
+      return dentroDeRango(baseFecha);
+    });
+
+    // 4) Fecha segura (para ordenar dentro del mismo estado)
+    const getTime = (e) => {
+      const d = parseLocalDateOnly(e.fechaRetiro || e.fecha || e.createdAt || 0);
+      const t = d?.getTime?.();
+      // Si no hay fecha válida, mandalo bien abajo dentro de su grupo
+      return Number.isFinite(t) ? t : -Infinity;
+    };
+
+    // 5) Orden: estado (según rank) y dentro del estado, fecha desc
+    return fil.slice().sort((a, b) => {
+      const ra = rank(a.estado);
+      const rb = rank(b.estado);
+      if (ra !== rb) return ra - rb;          // primero por estado
+      return getTime(b) - getTime(a);         // luego por fecha (más futura arriba)
+    });
+  }, [allEnvios, filtroEstado, filtroFecha]);
 
 
   return (
@@ -171,6 +236,7 @@ const ListarEnvios = () => {
         filtroEstado={filtroEstado}
         onChangeFecha={setFiltroFecha}
         onChangeEstado={setFiltroEstado}
+        onClear={() => { setFiltroFecha('historico'); setFiltroEstado('todos'); }}
       />
 
       {isLoading && (
@@ -293,12 +359,18 @@ function startOfLocalDay(d) {
 }
 
 function parseLocalDateOnly(value) {
-  if (typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value)) {
-    const [y, m, d] = value.split("-").map(Number);
-    return new Date(y, m - 1, d);
+  // Si es string, extrae siempre YYYY-MM-DD y construye un Date local sin TZ
+  if (typeof value === "string") {
+    const m = value.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (m) {
+      const [_, y, mo, d] = m;
+      return new Date(Number(y), Number(mo) - 1, Number(d));
+    }
   }
+  // Si ya es Date u otro formato, cae al parse normal
   return new Date(value);
 }
+
 
 function isEnvioEditable(fechaEnvio) {
   if (!fechaEnvio) return false;
@@ -306,7 +378,7 @@ function isEnvioEditable(fechaEnvio) {
   const today = startOfLocalDay(new Date());
   const tomorrow = new Date(today);
   tomorrow.setDate(tomorrow.getDate() + 1);
-  return envio >= tomorrow;
+  return envio.getTime() >= tomorrow.getTime();
 }
 
 export default ListarEnvios;

@@ -6,62 +6,64 @@ import { TruckIcon, LayersIcon, LogoutIcon } from "../../components/icons";
 import CancelPlanModal from "../../components/CancelPlanModal";
 
 const Navbar = () => {
-    const navigate = useNavigate();
-    const dispatch = useDispatch();
-    const [dropdownOpen, setDropdownOpen] = useState(false);
-    const [cancelPlanModalOpen, setCancelPlanModalOpen] = useState(false);
-    const [imageError, setImageError] = useState(false);
-    const dropdownRef = useRef(null);
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [cancelPlanModalOpen, setCancelPlanModalOpen] = useState(false);
+  const [imageError, setImageError] = useState(false);
+  const dropdownRef = useRef(null);
 
-    // Obtener datos del usuario desde Redux
-    const user = useSelector(selectUser);
-    const userPlan = useSelector(selectUserPlan);
+  // Obtener datos del usuario desde Redux
+  const user = useSelector(selectUser);
+  const userPlan = useSelector(selectUserPlan);
 
-    const userName = user?.nombre || user?.username || "Usuario";
-    const userEmail = user?.email || "";
-    const planDisplay = userPlan || "Plus";
-    const userImage = user?.imageUrl || null;
+  const userName = user?.nombre || user?.username || "Usuario";
+  const userEmail = user?.email || "";
+  const planDisplay = userPlan || "Plus";
+  const userImage = user?.imageUrl || null;
+  const hasImage = Boolean(userImage) && !imageError;
 
-    // Cerrar dropdown al hacer clic fuera
-    useEffect(() => {
-        const handleClickOutside = (event) => {
-            if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-                setDropdownOpen(false);
-            }
-        };
 
-        if (dropdownOpen) {
-            document.addEventListener("mousedown", handleClickOutside);
-        }
-
-        return () => {
-            document.removeEventListener("mousedown", handleClickOutside);
-        };
-    }, [dropdownOpen]);
-
-    // Reset imageError cuando cambia la imagen
-    useEffect(() => {
-        setImageError(false);
-    }, [userImage]);
-
-    // Generar iniciales del nombre (primeras letras de nombre y apellido)
-    const getInitials = (name) => {
-        const parts = name.trim().split(" ");
-        if (parts.length >= 2) {
-            return (parts[0][0] + parts[1][0]).toUpperCase();
-        }
-        return name.substring(0, 2).toUpperCase();
+  // Cerrar dropdown al hacer clic fuera
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setDropdownOpen(false);
+      }
     };
 
-    const userInitials = getInitials(userName);
+    if (dropdownOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
 
-    const logout = () => {
-        // Limpiar usuario de Redux (automáticamente limpia localStorage)
-        dispatch(clearUser());
-        navigate("/login");
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
     };
+  }, [dropdownOpen]);
 
-    return (
+  // Reset imageError cuando cambia la imagen
+  useEffect(() => {
+    setImageError(false);
+  }, [userImage]);
+
+  // Generar iniciales del nombre (primeras letras de nombre y apellido)
+  const getInitials = (name) => {
+    const parts = name.trim().split(" ");
+    if (parts.length >= 2) {
+      return (parts[0][0] + parts[1][0]).toUpperCase();
+    }
+    return name.substring(0, 2).toUpperCase();
+  };
+
+  const userInitials = getInitials(userName);
+
+  const logout = () => {
+    // Limpiar usuario de Redux (automáticamente limpia localStorage)
+    dispatch(clearUser());
+    navigate("/login");
+  };
+
+  return (
     <div className="navbar-content">
       <div className="navbar-brand">
         <div className="navbar-brand-icon">
@@ -85,36 +87,24 @@ const Navbar = () => {
             onClick={() => setDropdownOpen(!dropdownOpen)}
             aria-expanded={dropdownOpen}
           >
-            {/* Mostrar imagen o iniciales */}
-            {userImage && !imageError ? (
-              <img 
-                src={userImage} 
+            {hasImage ? (
+              <img
+                src={userImage}
                 alt={userName}
-                className="navbar-avatar navbar-avatar-image"
+                className="navbar-avatar-image navbar-avatar-image--large"
                 onError={() => setImageError(true)}
               />
             ) : (
               <div className="navbar-avatar">{userInitials}</div>
             )}
-            
+
             <span className="navbar-username">{userName}</span>
-            <svg
-              className={`dropdown-arrow ${dropdownOpen ? 'open' : ''}`}
-              width="12"
-              height="12"
-              viewBox="0 0 12 12"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path
-                d="M2 4L6 8L10 4"
-                stroke="currentColor"
-                strokeWidth="1.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
+            {/* flechita */}
+            <svg className={`dropdown-arrow ${dropdownOpen ? 'open' : ''}`} width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M2 4L6 8L10 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </button>
+
 
           {dropdownOpen && (
             <div className="navbar-dropdown">
@@ -122,8 +112,8 @@ const Navbar = () => {
                 {/* Avatar en el dropdown */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
                   {userImage && !imageError ? (
-                    <img 
-                      src={userImage} 
+                    <img
+                      src={userImage}
                       alt={userName}
                       style={{
                         width: '48px',
@@ -135,12 +125,12 @@ const Navbar = () => {
                       onError={() => setImageError(true)}
                     />
                   ) : (
-                    <div 
-                      className="navbar-avatar" 
-                      style={{ 
-                        width: '48px', 
-                        height: '48px', 
-                        fontSize: '1.2rem' 
+                    <div
+                      className="navbar-avatar"
+                      style={{
+                        width: '48px',
+                        height: '48px',
+                        fontSize: '1.2rem'
                       }}
                     >
                       {userInitials}

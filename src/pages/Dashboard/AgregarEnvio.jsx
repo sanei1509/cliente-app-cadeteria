@@ -8,16 +8,9 @@ import { useDispatch, useSelector } from "react-redux";
 import { toast } from 'react-toastify';
 import { Spinner } from "../../components/Spinner";
 
-/**
- * Componente AgregarEnvio
- *
- * Muestra el botón "Nuevo Envío" y maneja el modal con el formulario de registro.
- * El formulario se renderiza dentro de un Modal reutilizable.
- */
 const AgregarEnvio = () => {
     const navigate = useNavigate();
     const dispatch = useDispatch();
-    // Estado para controlar si el modal está abierto o cerrado
     const [isModalOpen, setIsModalOpen] = useState(false);
 
     const {
@@ -38,8 +31,6 @@ const AgregarEnvio = () => {
     const envios = useSelector((state) => state.envios.envios);
 
     const notasValue = watch("notas", "");
-    
-
 
     useEffect(() => {
         const fetchCategorias = async () => {
@@ -59,89 +50,82 @@ const AgregarEnvio = () => {
         fetchCategorias();
     }, []);
 
-    const onSubmit = async (formData) => {
-  setIsSubmitting(true);
+    const onSubmit = (formData) => {
+        setIsSubmitting(true);
 
-  const token = localStorage.getItem("token");
-  if (!token) {
-    toast.error("Tu sesión expiró. Iniciá sesión nuevamente.");
-    navigate("/login");
-    setIsSubmitting(false);
-    return;
-  }
+        const token = localStorage.getItem("token");
+        if (!token) {
+            toast.error("Tu sesión expiró. Iniciá sesión nuevamente.");
+            navigate("/login");
+            setIsSubmitting(false);
+            return;
+        }
 
-  // ✅ obtener la categoría seleccionada por ID
-  const categoriaId = formData.categoriaId;
-  const categoriaSeleccionada = categorias.find(c => c.id === categoriaId);
-  if (!categoriaSeleccionada) {
-    toast.error("Seleccioná una categoría válida.");
-    setIsSubmitting(false);
-    return;
-  }
+        // Obtener la categoría seleccionada por ID
+        const categoriaId = formData.categoriaId;
+        const categoriaSeleccionada = categorias.find(c => c.id === categoriaId);
+        if (!categoriaSeleccionada) {
+            toast.error("Seleccioná una categoría válida.");
+            setIsSubmitting(false);
+            return;
+        }
 
-  const payload = {
-    origen: {
-      calle: formData.origenCalle,
-      numero: formData.origenNumero,
-      ciudad: formData.origenCiudad,
-      referencia: formData.origenReferencia
-    },
-    destino: {
-      calle: formData.destinoCalle,
-      numero: formData.destinoNumero,
-      ciudad: formData.destinoCiudad,
-      referencia: formData.destinoReferencia
-    },
-    fechaRetiro: formData.fechaRetiro,
-    horaRetiroAprox: formData.horaRetiroAprox,
-    tamanoPaquete: formData.tamanoPaquete,
-    notas: formData.notas,
-    // ✅ la API espera objeto "categoria" con "nombre" (no id)
-    categoria: {
-      nombre: categoriaSeleccionada.name
-    }
-  };
+        const payload = {
+            origen: {
+                calle: formData.origenCalle,
+                numero: formData.origenNumero,
+                ciudad: formData.origenCiudad,
+                referencia: formData.origenReferencia || ""
+            },
+            destino: {
+                calle: formData.destinoCalle,
+                numero: formData.destinoNumero,
+                ciudad: formData.destinoCiudad,
+                referencia: formData.destinoReferencia || ""
+            },
+            fechaRetiro: formData.fechaRetiro,
+            horaRetiroAprox: formData.horaRetiroAprox,
+            tamanoPaquete: formData.tamanoPaquete,
+            notas: formData.notas || "",
+            categoria: {
+                nombre: categoriaSeleccionada.name
+            }
+        };
 
-  const catDesc = formData.categoriaDescripcion;
-  if (catDesc) payload.categoria.descripcion = catDesc;
+        if (formData.categoriaDescripcion) {
+            payload.categoria.descripcion = formData.categoriaDescripcion;
+        }
 
-  const url = `${API_CESAR}/v1/envios`;
-
-fetch(url, {
-  method: "POST",
-  headers: {
-    "Content-Type": "application/json",
-    Authorization: `Bearer ${token}`,
-  },
-  body: JSON.stringify(payload),
-})
-  .then((res) => {
-    if (!res.ok) {
-      // Levanto el error del body si existe
-      return res.json().catch(() => ({})).then((err) => {
-        const msg = err?.message || res.statusText || "No se pudo crear el envío";
-        throw new Error(msg);
-      });
-    }
-    return res.json(); // ✅ acá obtengo el nuevo envío creado por la API
-  })
-  .then((nuevoEnvio) => {
-    // ✅ Actualizo Redux para que ListarEnvios se re-renderice
-    dispatch(addEnvio(nuevoEnvio));
-
-    // opcional: cerrar modal y avisar
-    reset();
-    setIsModalOpen(false);
-    toast.success("Envío registrado exitosamente");
-  })
-  .catch((error) => {
-    toast.error(`Error: ${error.message || "Error de conexión. Intentá nuevamente."}`);
-  })
-  .finally(() => {
-    setIsSubmitting(false);
-  });
-};
-
+        fetch(`${API_CESAR}/v1/envios`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify(payload),
+        })
+            .then((res) => {
+                if (!res.ok) {
+                    return res.json().catch(() => ({})).then((err) => {
+                        const msg = err?.message || res.statusText || "No se pudo crear el envío";
+                        throw new Error(msg);
+                    });
+                }
+                return res.json();
+            })
+            .then((nuevoEnvio) => {
+                dispatch(addEnvio(nuevoEnvio));
+                reset();
+                setIsModalOpen(false);
+                toast.success("Envío registrado exitosamente");
+            })
+            .catch((error) => {
+                toast.error(`Error: ${error.message || "Error de conexión. Intentá nuevamente."}`);
+            })
+            .finally(() => {
+                setIsSubmitting(false);
+            });
+    };
 
     return (
         <>
@@ -152,7 +136,6 @@ fetch(url, {
             <button
                 className="btn btn-primary"
                 onClick={() => {
-                    // Validar límite de envíos para plan Plus
                     if (user?.plan === "plus") {
                         const enviosPendientes = envios.filter(e => e.estado === "pendiente").length;
                         if (enviosPendientes >= 10) {
@@ -169,7 +152,6 @@ fetch(url, {
                 Nuevo Envío
             </button>
 
-            {/* Modal con el formulario de registro de envío */}
             <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}>
                 <div className="modal-header">
                     <h2 className="modal-title">Registrar Envío</h2>
@@ -183,18 +165,24 @@ fetch(url, {
                     <div className="form-group">
                         <label className="form-label">Calle *</label>
                         <input
-                            className="form-input"
+                            className={`form-input ${errors.origenCalle ? 'is-invalid' : ''}`}
                             placeholder="Ej: Av. 18 de Julio"
                             {...register("origenCalle", {
-                                required: "La calle de origen es requerida",
+                                required: "⚠️ La calle de origen es requerida",
                                 minLength: {
                                     value: 3,
-                                    message: "La calle debe tener al menos 3 caracteres",
+                                    message: "⚠️ La calle debe tener al menos 3 caracteres",
                                 },
                             })}
+                            style={errors.origenCalle ? { borderColor: '#dc2626' } : {}}
                         />
                         {errors.origenCalle && (
-                            <div style={{ color: "#dc2626", fontSize: "0.875rem", marginTop: "0.25rem" }}>
+                            <div style={{ 
+                                color: '#dc2626', 
+                                fontSize: '0.875rem', 
+                                marginTop: '0.25rem',
+                                fontWeight: '500'
+                            }}>
                                 {errors.origenCalle.message}
                             </div>
                         )}
@@ -204,14 +192,20 @@ fetch(url, {
                         <div className="form-group">
                             <label className="form-label">Número *</label>
                             <input
-                                className="form-input"
+                                className={`form-input ${errors.origenNumero ? 'is-invalid' : ''}`}
                                 placeholder="1234"
                                 {...register("origenNumero", {
-                                    required: "El número de origen es requerido",
+                                    required: "⚠️ El número es requerido",
                                 })}
+                                style={errors.origenNumero ? { borderColor: '#dc2626' } : {}}
                             />
                             {errors.origenNumero && (
-                                <div style={{ color: "#dc2626", fontSize: "0.875rem", marginTop: "0.25rem" }}>
+                                <div style={{ 
+                                    color: '#dc2626', 
+                                    fontSize: '0.875rem', 
+                                    marginTop: '0.25rem',
+                                    fontWeight: '500'
+                                }}>
                                     {errors.origenNumero.message}
                                 </div>
                             )}
@@ -219,18 +213,24 @@ fetch(url, {
                         <div className="form-group">
                             <label className="form-label">Ciudad *</label>
                             <input
-                                className="form-input"
+                                className={`form-input ${errors.origenCiudad ? 'is-invalid' : ''}`}
                                 placeholder="Montevideo"
                                 {...register("origenCiudad", {
-                                    required: "La ciudad de origen es requerida",
+                                    required: "⚠️ La ciudad es requerida",
                                     minLength: {
                                         value: 3,
-                                        message: "La ciudad debe tener al menos 3 caracteres",
+                                        message: "⚠️ La ciudad debe tener al menos 3 caracteres",
                                     },
                                 })}
+                                style={errors.origenCiudad ? { borderColor: '#dc2626' } : {}}
                             />
                             {errors.origenCiudad && (
-                                <div style={{ color: "#dc2626", fontSize: "0.875rem", marginTop: "0.25rem" }}>
+                                <div style={{ 
+                                    color: '#dc2626', 
+                                    fontSize: '0.875rem', 
+                                    marginTop: '0.25rem',
+                                    fontWeight: '500'
+                                }}>
                                     {errors.origenCiudad.message}
                                 </div>
                             )}
@@ -239,7 +239,11 @@ fetch(url, {
 
                     <div className="form-group">
                         <label className="form-label">Referencia</label>
-                        <input className="form-input" placeholder="Ej: Frente a la plaza" {...register("origenReferencia")} />
+                        <input
+                            className="form-input"
+                            placeholder="Ej: Frente a la plaza"
+                            {...register("origenReferencia")}
+                        />
                     </div>
 
                     {/* Destino */}
@@ -248,18 +252,24 @@ fetch(url, {
                     <div className="form-group">
                         <label className="form-label">Calle *</label>
                         <input
-                            className="form-input"
+                            className={`form-input ${errors.destinoCalle ? 'is-invalid' : ''}`}
                             placeholder="Ej: Av. Italia"
                             {...register("destinoCalle", {
-                                required: "La calle de destino es requerida",
+                                required: "⚠️ La calle de destino es requerida",
                                 minLength: {
                                     value: 3,
-                                    message: "La calle debe tener al menos 3 caracteres",
+                                    message: "⚠️ La calle debe tener al menos 3 caracteres",
                                 },
                             })}
+                            style={errors.destinoCalle ? { borderColor: '#dc2626' } : {}}
                         />
                         {errors.destinoCalle && (
-                            <div style={{ color: "#dc2626", fontSize: "0.875rem", marginTop: "0.25rem" }}>
+                            <div style={{ 
+                                color: '#dc2626', 
+                                fontSize: '0.875rem', 
+                                marginTop: '0.25rem',
+                                fontWeight: '500'
+                            }}>
                                 {errors.destinoCalle.message}
                             </div>
                         )}
@@ -269,14 +279,20 @@ fetch(url, {
                         <div className="form-group">
                             <label className="form-label">Número *</label>
                             <input
-                                className="form-input"
+                                className={`form-input ${errors.destinoNumero ? 'is-invalid' : ''}`}
                                 placeholder="5678"
                                 {...register("destinoNumero", {
-                                    required: "El número de destino es requerido",
+                                    required: "⚠️ El número es requerido",
                                 })}
+                                style={errors.destinoNumero ? { borderColor: '#dc2626' } : {}}
                             />
                             {errors.destinoNumero && (
-                                <div style={{ color: "#dc2626", fontSize: "0.875rem", marginTop: "0.25rem" }}>
+                                <div style={{ 
+                                    color: '#dc2626', 
+                                    fontSize: '0.875rem', 
+                                    marginTop: '0.25rem',
+                                    fontWeight: '500'
+                                }}>
                                     {errors.destinoNumero.message}
                                 </div>
                             )}
@@ -284,18 +300,24 @@ fetch(url, {
                         <div className="form-group">
                             <label className="form-label">Ciudad *</label>
                             <input
-                                className="form-input"
+                                className={`form-input ${errors.destinoCiudad ? 'is-invalid' : ''}`}
                                 placeholder="Punta del Este"
                                 {...register("destinoCiudad", {
-                                    required: "La ciudad de destino es requerida",
+                                    required: "⚠️ La ciudad es requerida",
                                     minLength: {
                                         value: 3,
-                                        message: "La ciudad debe tener al menos 3 caracteres",
+                                        message: "⚠️ La ciudad debe tener al menos 3 caracteres",
                                     },
                                 })}
+                                style={errors.destinoCiudad ? { borderColor: '#dc2626' } : {}}
                             />
                             {errors.destinoCiudad && (
-                                <div style={{ color: "#dc2626", fontSize: "0.875rem", marginTop: "0.25rem" }}>
+                                <div style={{ 
+                                    color: '#dc2626', 
+                                    fontSize: '0.875rem', 
+                                    marginTop: '0.25rem',
+                                    fontWeight: '500'
+                                }}>
                                     {errors.destinoCiudad.message}
                                 </div>
                             )}
@@ -304,7 +326,11 @@ fetch(url, {
 
                     <div className="form-group">
                         <label className="form-label">Referencia</label>
-                        <input className="form-input" placeholder="Ej: Apartamento 302" {...register("destinoReferencia")} />
+                        <input
+                            className="form-input"
+                            placeholder="Ej: Apartamento 302"
+                            {...register("destinoReferencia")}
+                        />
                     </div>
 
                     {/* Detalles del Envío */}
@@ -315,25 +341,34 @@ fetch(url, {
                             <label className="form-label">Fecha de Retiro *</label>
                             <input
                                 type="date"
-                                className="form-input"
+                                className={`form-input ${errors.fechaRetiro ? 'is-invalid' : ''}`}
                                 {...register("fechaRetiro", {
                                     required: "La fecha de retiro es requerida",
                                     validate: {
-                                        future: (value) => {
+                                        notPast: (value) => {
                                             if (!value) return true;
-                                            const selected = new Date(value);
-                                            const now = new Date();
-                                            now.setHours(0, 0, 0, 0);
-                                            return (
-                                                selected >= now ||
-                                                "La fecha de retiro debe ser una fecha futura"
-                                            );
+                                            const selected = new Date(value + "T00:00:00");
+                                            const today = new Date();
+                                            today.setHours(0, 0, 0, 0);
+                                            const tomorrow = new Date(today);
+                                            tomorrow.setDate(tomorrow.getDate() + 1);
+                                            
+                                            if (selected < tomorrow) {
+                                                return "⚠️ La fecha de retiro debe ser a partir de mañana";
+                                            }
+                                            return true;
                                         },
                                     },
                                 })}
+                                style={errors.fechaRetiro ? { borderColor: '#dc2626' } : {}}
                             />
                             {errors.fechaRetiro && (
-                                <div style={{ color: "#dc2626", fontSize: "0.875rem", marginTop: "0.25rem" }}>
+                                <div style={{ 
+                                    color: '#dc2626', 
+                                    fontSize: '0.875rem', 
+                                    marginTop: '0.25rem',
+                                    fontWeight: '500'
+                                }}>
                                     {errors.fechaRetiro.message}
                                 </div>
                             )}
@@ -341,18 +376,24 @@ fetch(url, {
                         <div className="form-group">
                             <label className="form-label">Hora aproximada (HH:MM) *</label>
                             <input
-                                className="form-input"
+                                className={`form-input ${errors.horaRetiroAprox ? 'is-invalid' : ''}`}
                                 placeholder="14:30"
                                 {...register("horaRetiroAprox", {
-                                    required: "La hora aproximada es requerida",
+                                    required: "⚠️ La hora aproximada es requerida",
                                     pattern: {
                                         value: /^([01]\d|2[0-3]):[0-5]\d$/,
-                                        message: "Hora inválida (formato HH:mm)",
+                                        message: "⚠️ Formato inválido. Usa HH:mm (ejemplo: 14:30)",
                                     },
                                 })}
+                                style={errors.horaRetiroAprox ? { borderColor: '#dc2626' } : {}}
                             />
                             {errors.horaRetiroAprox && (
-                                <div style={{ color: "#dc2626", fontSize: "0.875rem", marginTop: "0.25rem" }}>
+                                <div style={{ 
+                                    color: '#dc2626', 
+                                    fontSize: '0.875rem', 
+                                    marginTop: '0.25rem',
+                                    fontWeight: '500'
+                                }}>
                                     {errors.horaRetiroAprox.message}
                                 </div>
                             )}
@@ -363,11 +404,12 @@ fetch(url, {
                         <div className="form-group">
                             <label className="form-label">Tamaño *</label>
                             <select
-                                className="form-input"
-                                defaultValue="mediano"
+                                className={`form-input ${errors.tamanoPaquete ? 'is-invalid' : ''}`}
+                                defaultValue=""
                                 {...register("tamanoPaquete", {
-                                    required: "El tamaño del paquete es requerido",
+                                    required: "⚠️ Selecciona un tamaño de paquete",
                                 })}
+                                style={errors.tamanoPaquete ? { borderColor: '#dc2626' } : {}}
                             >
                                 <option value="">-- Seleccionar --</option>
                                 <option value="chico">Chico</option>
@@ -375,7 +417,12 @@ fetch(url, {
                                 <option value="grande">Grande</option>
                             </select>
                             {errors.tamanoPaquete && (
-                                <div style={{ color: "#dc2626", fontSize: "0.875rem", marginTop: "0.25rem" }}>
+                                <div style={{ 
+                                    color: '#dc2626', 
+                                    fontSize: '0.875rem', 
+                                    marginTop: '0.25rem',
+                                    fontWeight: '500'
+                                }}>
                                     {errors.tamanoPaquete.message}
                                 </div>
                             )}
@@ -385,25 +432,17 @@ fetch(url, {
 
                             {catError && (
                                 <div style={{ color: "var(--error-color)", fontSize: ".9rem", marginBottom: ".25rem" }}>
-                                    {catError} — <button type="button" className="btn btn-ghost btn-sm" onClick={() => {
-                                        // reintento simple
-                                        setCatLoading(true);
-                                        setCatError(null);
-                                        fetch(`${API_CESAR}/public/v1/categories`)
-                                            .then(r => r.json())
-                                            .then(d => setCategorias(Array.isArray(d) ? d : []))
-                                            .catch(() => setCatError("No se pudieron cargar las categorías."))
-                                            .finally(() => setCatLoading(false));
-                                    }}>Reintentar</button>
+                                    {catError}
                                 </div>
                             )}
 
                             <select
-                                className="form-input"
+                                className={`form-input ${errors.categoriaId ? 'is-invalid' : ''}`}
                                 disabled={catLoading || categorias.length === 0}
                                 {...register("categoriaId", {
-                                    required: "La categoría es requerida",
+                                    required: "⚠️ Selecciona una categoría",
                                 })}
+                                style={errors.categoriaId ? { borderColor: '#dc2626' } : {}}
                             >
                                 <option value="">
                                     {catLoading ? "Cargando..." : "Seleccionar categoría"}
@@ -413,23 +452,31 @@ fetch(url, {
                                 ))}
                             </select>
                             {errors.categoriaId && (
-                                <div style={{ color: "#dc2626", fontSize: "0.875rem", marginTop: "0.25rem" }}>
+                                <div style={{ 
+                                    color: '#dc2626', 
+                                    fontSize: '0.875rem', 
+                                    marginTop: '0.25rem',
+                                    fontWeight: '500'
+                                }}>
                                     {errors.categoriaId.message}
                                 </div>
                             )}
                         </div>
-
                     </div>
 
                     <div className="form-group">
                         <label className="form-label">Descripción Categoría</label>
-                        <input className="form-input" placeholder="Opcional" {...register("categoriaDescripcion")} />
+                        <input
+                            className="form-input"
+                            placeholder="Opcional"
+                            {...register("categoriaDescripcion")}
+                        />
                     </div>
 
                     <div className="form-group">
                         <label className="form-label">Notas</label>
                         <textarea
-                            className="form-input"
+                            className={`form-input ${errors.notas ? 'is-invalid' : ''}`}
                             rows="3"
                             placeholder="Instrucciones especiales..."
                             maxLength="100"
@@ -450,9 +497,7 @@ fetch(url, {
                             {notasValue.length}/100 caracteres
                         </div>
                         {errors.notas && (
-                            <div style={{ color: "#dc2626", fontSize: "0.875rem", marginTop: "0.25rem" }}>
-                                {errors.notas.message}
-                            </div>
+                            <div className="form-error">{errors.notas.message}</div>
                         )}
                     </div>
 
@@ -460,7 +505,10 @@ fetch(url, {
                         <button
                             type="button"
                             className="btn btn-ghost btn-full"
-                            onClick={() => setIsModalOpen(false)}
+                            onClick={() => {
+                                reset();
+                                setIsModalOpen(false);
+                            }}
                             disabled={isSubmitting}
                         >
                             Cancelar

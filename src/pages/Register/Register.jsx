@@ -50,14 +50,14 @@ export default function Register() {
     const [nombre, ...resto] = formData.fullName.trim().split(" ");
     const apellido = resto.length ? resto.join(" ") : "-";
 
-    let imageUrl = null;
+    let imageUrl;
 
     // Subir la imagen a Cloudinary si existe
     if (file) {
       const data = new FormData();
       data.append("upload_preset", "Cadeteria");
       data.append("file", file);
-
+      
       const cloudinaryURL = "https://api.cloudinary.com/v1_1/dvu1wtvuq/image/upload";
 
       try {
@@ -69,7 +69,7 @@ export default function Register() {
 
         if (response.ok) {
           const cloudData = await response.json();
-          imageUrl = cloudData.url;
+          imageUrl = cloudData.secure_url || cloudData.url;
           console.log("Imagen subida a Cloudinary:", imageUrl);
         } else {
           toast.error("Error al subir la imagen");
@@ -84,18 +84,24 @@ export default function Register() {
       }
     }
 
+    // Preparar payload con validación explícita
+    const payload = {
+      username: formData.username,
+      password: formData.password,
+      nombre,
+      apellido,
+      email: formData.email,
+    };
+    if (imageUrl) payload.imageUrl = imageUrl; // solo si existe
+
+    console.log("Payload a enviar:", payload);
+    console.log("Tipo de imageUrl:", typeof payload.imageUrl);
+
     try {
       const res = await fetch(`${API_CESAR}/public/v1/signup`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          username: formData.username,
-          password: formData.password,
-          nombre,
-          apellido,
-          email: formData.email,
-          imageUrl, // Agregar la URL de la imagen
-        }),
+        body: JSON.stringify(payload),
       });
 
       if (!res.ok) {
@@ -107,16 +113,12 @@ export default function Register() {
 
       const data = await res.json();
 
-      // Intentar extraer token y usuario de diferentes estructuras posibles
       let tokenStr, userObj;
 
-      // Caso 1: { token: { token: "...", user: {...} } }
       if (data?.token?.token && data?.token?.user) {
         tokenStr = data.token.token;
         userObj = data.token.user;
-      }
-      // Caso 2: Respuesta directa del usuario (sin token) - hacer login manual
-      else if (data?.id && data?.username) {
+      } else if (data?.id && data?.username) {
         try {
           const loginRes = await fetch(`${API_CESAR}/public/v1/login`, {
             method: "POST",
@@ -134,7 +136,6 @@ export default function Register() {
           }
 
           const loginData = await loginRes.json();
-
           tokenStr = loginData?.token?.token;
           userObj = loginData?.token?.user;
         } catch (loginError) {
@@ -145,15 +146,9 @@ export default function Register() {
       }
 
       if (tokenStr && userObj) {
-        // Limpiar localStorage antes de guardar nuevos datos
         localStorage.clear();
-
-        // Guardar token
         localStorage.setItem("token", tokenStr);
-
-        // Guardar usuario usando Redux (automáticamente sincroniza con localStorage)
         dispatch(setUser(userObj));
-
         toast.success("¡Cuenta creada exitosamente! Bienvenido");
         navigate("/dashboard");
       } else {
@@ -188,19 +183,28 @@ export default function Register() {
             <input
               type="text"
               id="fullName"
-              className="form-input"
+              className={`form-input ${errors.fullName ? 'is-invalid' : ''}`}
               placeholder="Juan Pérez"
               autoComplete="name"
               {...register("fullName", {
-                required: "Por favor ingresa tu nombre completo",
+                required: "⚠️ Por favor ingresa tu nombre completo",
                 minLength: {
                   value: 3,
-                  message: "El nombre debe tener al menos 3 caracteres",
+                  message: "⚠️ El nombre debe tener al menos 3 caracteres",
                 },
               })}
+              style={errors.fullName ? { borderColor: '#dc2626' } : {}}
             />
             {errors.fullName && (
-              <span className="form-error">{errors.fullName.message}</span>
+              <span style={{ 
+                color: '#dc2626', 
+                fontSize: '0.875rem', 
+                marginTop: '0.25rem',
+                display: 'block',
+                fontWeight: '500'
+              }}>
+                {errors.fullName.message}
+              </span>
             )}
           </div>
 
@@ -209,23 +213,32 @@ export default function Register() {
             <input
               type="text"
               id="username"
-              className="form-input"
+              className={`form-input ${errors.username ? 'is-invalid' : ''}`}
               placeholder="tu_usuario"
               autoComplete="username"
               {...register("username", {
-                required: "El nombre de usuario es obligatorio",
+                required: "⚠️ El nombre de usuario es obligatorio",
                 minLength: {
                   value: 2,
-                  message: "El usuario debe tener al menos 2 caracteres",
+                  message: "⚠️ El usuario debe tener al menos 2 caracteres",
                 },
                 maxLength: {
                   value: 50,
-                  message: "El usuario debe tener como máximo 50 caracteres",
+                  message: "⚠️ El usuario debe tener como máximo 50 caracteres",
                 },
               })}
+              style={errors.username ? { borderColor: '#dc2626' } : {}}
             />
             {errors.username && (
-              <span className="form-error">{errors.username.message}</span>
+              <span style={{ 
+                color: '#dc2626', 
+                fontSize: '0.875rem', 
+                marginTop: '0.25rem',
+                display: 'block',
+                fontWeight: '500'
+              }}>
+                {errors.username.message}
+              </span>
             )}
           </div>
 
@@ -252,19 +265,28 @@ export default function Register() {
             <input
               type="email"
               id="email"
-              className="form-input"
+              className={`form-input ${errors.email ? 'is-invalid' : ''}`}
               placeholder="tu@email.com"
               autoComplete="email"
               {...register("email", {
-                required: "Por favor ingresa tu email",
+                required: "⚠️ Por favor ingresa tu email",
                 pattern: {
                   value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-                  message: "Formato de email inválido",
+                  message: "⚠️ Formato de email inválido",
                 },
               })}
+              style={errors.email ? { borderColor: '#dc2626' } : {}}
             />
             {errors.email && (
-              <span className="form-error">{errors.email.message}</span>
+              <span style={{ 
+                color: '#dc2626', 
+                fontSize: '0.875rem', 
+                marginTop: '0.25rem',
+                display: 'block',
+                fontWeight: '500'
+              }}>
+                {errors.email.message}
+              </span>
             )}
           </div>
 
@@ -273,19 +295,28 @@ export default function Register() {
             <input
               type="tel"
               id="phone"
-              className="form-input"
+              className={`form-input ${errors.phone ? 'is-invalid' : ''}`}
               placeholder="+54 11 1234-5678"
               autoComplete="tel"
               {...register("phone", {
-                required: "Por favor ingresa un teléfono válido",
+                required: "⚠️ Por favor ingresa un teléfono válido",
                 minLength: {
                   value: 8,
-                  message: "El teléfono debe tener al menos 8 dígitos",
+                  message: "⚠️ El teléfono debe tener al menos 8 dígitos",
                 },
               })}
+              style={errors.phone ? { borderColor: '#dc2626' } : {}}
             />
             {errors.phone && (
-              <span className="form-error">{errors.phone.message}</span>
+              <span style={{ 
+                color: '#dc2626', 
+                fontSize: '0.875rem', 
+                marginTop: '0.25rem',
+                display: 'block',
+                fontWeight: '500'
+              }}>
+                {errors.phone.message}
+              </span>
             )}
           </div>
 
@@ -294,19 +325,28 @@ export default function Register() {
             <input
               type="password"
               id="password"
-              className="form-input"
+              className={`form-input ${errors.password ? 'is-invalid' : ''}`}
               placeholder="Mínimo 4 caracteres"
               autoComplete="new-password"
               {...register("password", {
-                required: "La contraseña es obligatoria",
+                required: "⚠️ La contraseña es obligatoria",
                 minLength: {
                   value: 4,
-                  message: "La contraseña debe tener al menos 4 caracteres",
+                  message: "⚠️ La contraseña debe tener al menos 4 caracteres",
                 },
               })}
+              style={errors.password ? { borderColor: '#dc2626' } : {}}
             />
             {errors.password && (
-              <span className="form-error">{errors.password.message}</span>
+              <span style={{ 
+                color: '#dc2626', 
+                fontSize: '0.875rem', 
+                marginTop: '0.25rem',
+                display: 'block',
+                fontWeight: '500'
+              }}>
+                {errors.password.message}
+              </span>
             )}
           </div>
 
@@ -315,19 +355,27 @@ export default function Register() {
             <input
               type="password"
               id="confirmPassword"
-              className="form-input"
+              className={`form-input ${errors.confirmPassword ? 'is-invalid' : ''}`}
               placeholder="Repite tu contraseña"
               autoComplete="new-password"
               {...register("confirmPassword", {
-                required: "Debes confirmar tu contraseña",
+                required: "⚠️ Debes confirmar tu contraseña",
                 validate: (value) =>
-                  value === password || "Las contraseñas no coinciden",
+                  value === password || "⚠️ Las contraseñas no coinciden",
               })}
+              style={errors.confirmPassword ? { borderColor: '#dc2626' } : {}}
             />
             {errors.confirmPassword && (
-              <span className="form-error">{errors.confirmPassword.message}</span>
+              <span style={{ 
+                color: '#dc2626', 
+                fontSize: '0.875rem', 
+                marginTop: '0.25rem',
+                display: 'block',
+                fontWeight: '500'
+              }}>
+                {errors.confirmPassword.message}
+              </span>
             )}
-
           </div>
 
           <div className="form-group">
@@ -336,7 +384,7 @@ export default function Register() {
                 type="checkbox"
                 id="terms"
                 {...register("terms", {
-                  required: "Debes aceptar los términos y condiciones",
+                  required: "⚠️ Debes aceptar los términos y condiciones",
                 })}
               />
               <label htmlFor="terms">
@@ -346,7 +394,15 @@ export default function Register() {
               </label>
             </div>
             {errors.terms && (
-              <span className="form-error">{errors.terms.message}</span>
+              <span style={{ 
+                color: '#dc2626', 
+                fontSize: '0.875rem', 
+                marginTop: '0.25rem',
+                display: 'block',
+                fontWeight: '500'
+              }}>
+                {errors.terms.message}
+              </span>
             )}
           </div>
 
