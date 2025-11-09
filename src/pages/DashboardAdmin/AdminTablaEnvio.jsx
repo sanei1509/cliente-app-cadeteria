@@ -3,6 +3,8 @@ import { useDispatch } from "react-redux";
 import { updateEnvio, deleteEnvio } from "../../features/enviosSlice";
 import { API_CESAR } from "../../api/config";
 import { ClipLoader } from "react-spinners";
+import { toast } from 'react-toastify';
+import ConfirmModal from "../../components/ConfirmModal";
 
 function getUserIdFromEnvio(envio) {
   if (!envio) return "";
@@ -15,6 +17,9 @@ function getUserIdFromEnvio(envio) {
 const AdminTablaEnvio = ({ envio }) => {
   const [isUpdating, setIsUpdating] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [confirmModalOpen, setConfirmModalOpen] = useState(false);
+  const [confirmModalData, setConfirmModalData] = useState({});
+  const [pendingEstadoChange, setPendingEstadoChange] = useState(null);
   const dispatch = useDispatch();
 
   const getBadgeClass = (estado) => {
@@ -47,13 +52,21 @@ const AdminTablaEnvio = ({ envio }) => {
     const nuevoEstado = e.target.value;
     if (nuevoEstado === envio.estado) return; // No hacer nada si es el mismo estado
 
-    if (
-      !window.confirm(`¿Cambiar estado a "${formatearEstado(nuevoEstado)}"?`)
-    ) {
-      e.target.value = envio.estado; // Restaurar valor original
-      return;
-    }
+    // Guardar el cambio pendiente y abrir modal
+    setPendingEstadoChange({ nuevoEstado, selectElement: e.target });
+    setConfirmModalData({
+      title: "Cambiar Estado",
+      message: `¿Cambiar estado a "${formatearEstado(nuevoEstado)}"?`,
+      confirmText: "Cambiar",
+      cancelText: "Cancelar",
+      type: "primary",
+      onConfirm: () => confirmarCambioEstado(nuevoEstado, e.target),
+    });
+    setConfirmModalOpen(true);
+  };
 
+  const confirmarCambioEstado = (nuevoEstado, selectElement) => {
+    setConfirmModalOpen(false);
     setIsUpdating(true);
     const token = localStorage.getItem("token");
 
@@ -70,11 +83,11 @@ const AdminTablaEnvio = ({ envio }) => {
           return response
             .json()
             .then((err) => {
-              alert(`Error: ${err?.message || response.statusText}`);
+              toast.error(`Error: ${err?.message || response.statusText}`);
               throw new Error(err?.message || response.statusText);
             })
             .catch(() => {
-              alert(`Error: ${response.statusText}`);
+              toast.error(`Error: ${response.statusText}`);
               throw new Error(response.statusText);
             });
         }
@@ -82,10 +95,11 @@ const AdminTablaEnvio = ({ envio }) => {
       })
       .then((data) => {
         dispatch(updateEnvio({ id: data.id, updatedEnvio: data }));
+        toast.success(`Estado cambiado a "${formatearEstado(data.estado)}" exitosamente`);
       })
       .catch((error) => {
         console.error("Error al cambiar estado:", error);
-        e.target.value = envio.estado; // Restaurar valor en caso de error
+        if (selectElement) selectElement.value = envio.estado; // Restaurar valor en caso de error
       })
       .finally(() => {
         setIsUpdating(false);
@@ -93,13 +107,19 @@ const AdminTablaEnvio = ({ envio }) => {
   };
 
   const handleEliminar = () => {
-    if (
-      !window.confirm(
-        "¿Estás seguro de eliminar este envío? Esta acción no se puede deshacer."
-      )
-    )
-      return;
+    setConfirmModalData({
+      title: "Eliminar Envío",
+      message: "¿Estás seguro de eliminar este envío? Esta acción no se puede deshacer.",
+      confirmText: "Eliminar",
+      cancelText: "Cancelar",
+      type: "danger",
+      onConfirm: confirmarEliminarEnvio,
+    });
+    setConfirmModalOpen(true);
+  };
 
+  const confirmarEliminarEnvio = () => {
+    setConfirmModalOpen(false);
     setIsUpdating(true);
     const token = localStorage.getItem("token");
 
@@ -114,17 +134,17 @@ const AdminTablaEnvio = ({ envio }) => {
           return response
             .json()
             .then((err) => {
-              alert(`Error: ${err?.message || response.statusText}`);
+              toast.error(`Error: ${err?.message || response.statusText}`);
               throw new Error(err?.message || response.statusText);
             })
             .catch(() => {
-              alert(`Error: ${response.statusText}`);
+              toast.error(`Error: ${response.statusText}`);
               throw new Error(response.statusText);
             });
         }
         // Eliminar del store Redux
         dispatch(deleteEnvio(envio.id));
-        alert("Envío eliminado exitosamente");
+        toast.success("Envío eliminado exitosamente");
       })
       .catch((error) => {
         console.error("Error al eliminar envío:", error);
@@ -149,6 +169,7 @@ const AdminTablaEnvio = ({ envio }) => {
   };
 
   return (
+    <>
     <tr>
       <td>{envio.codigoSeguimiento || envio.id?.substring(0, 8) || "-"}</td>
 
@@ -284,6 +305,26 @@ const AdminTablaEnvio = ({ envio }) => {
         </div>
       </td>
     </tr>
+
+    <ConfirmModal
+      isOpen={confirmModalOpen}
+      onClose={() => {
+        setConfirmModalOpen(false);
+        // Restaurar valor del select si se cancela el cambio de estado
+        if (pendingEstadoChange?.selectElement) {
+          pendingEstadoChange.selectElement.value = envio.estado;
+        }
+        setPendingEstadoChange(null);
+      }}
+      onConfirm={confirmModalData.onConfirm}
+      title={confirmModalData.title}
+      message={confirmModalData.message}
+      confirmText={confirmModalData.confirmText}
+      cancelText={confirmModalData.cancelText}
+      type={confirmModalData.type}
+      isLoading={isUpdating}
+    />
+    </>
   );
 };
 

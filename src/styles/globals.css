@@ -793,17 +793,23 @@ a:hover {
 
 .modal-header {
   margin-bottom: var(--spacing-lg);
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 .modal-title {
   font-size: var(--font-size-xl);
   font-weight: 600;
   margin-bottom: var(--spacing-xs);
+  margin: 0;
 }
 
 .modal-subtitle {
   color: var(--text-secondary);
   font-size: var(--font-size-base);
+  margin-top: var(--spacing-xs);
 }
 
 /* ============================================
@@ -839,6 +845,13 @@ a:hover {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   gap: var(--spacing-md);
+  margin-bottom: var(--spacing-lg);
+}
+
+.charts-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+  gap: var(--spacing-lg);
   margin-bottom: var(--spacing-lg);
 }
 
@@ -2085,10 +2098,10 @@ a:hover {
 .kpis-grid{
   display: grid;
   gap: 16px;
-  /* 5 columnas; la última “simula” ser más ancha gracias a la tarjeta wide */
-  grid-template-columns: 1fr 1fr 1fr 1fr 1.4fr;
+  /* 4 columnas iguales */
+  grid-template-columns: repeat(4, 1fr);
   align-items: stretch;
-  overflow: visible; /* importante para el zoom */
+  overflow: visible;
 }
 
 /* ====== TARJETAS ====== */

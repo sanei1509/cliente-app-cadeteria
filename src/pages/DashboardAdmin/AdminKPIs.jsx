@@ -7,9 +7,11 @@ import {
   UsersIcon,
   ClockIcon,
 } from "../../components/icons";
+import { Spinner } from "../../components/Spinner";
 
 const AdminKPIs = () => {
   const allEnvios = useSelector((state) => state.envios.allEnvios);
+  const isLoading = useSelector((state) => state.envios.areEnviosLoading);
   const [totalUsuarios, setTotalUsuarios] = useState(0);
 
   // Cargar total de usuarios
@@ -40,8 +42,20 @@ const AdminKPIs = () => {
             <PackageIcon />
           </div>
         </div>
-        <div className="stat-value">{totalEnvios}</div>
-        <div className="stat-change">{entregados} entregados</div>
+        <div className="stat-value">
+          {isLoading ? (
+            <Spinner color={"text-primary"} size={"spinner-border-md"} />
+          ) : (
+            totalEnvios
+          )}
+        </div>
+        <div className="stat-change">
+          {isLoading ? (
+            <Spinner color={"text-primary"} size={"spinner-border-sm"} />
+          ) : (
+            `${entregados} entregados`
+          )}
+        </div>
       </article>
 
       <article className="stat-card">
@@ -51,7 +65,13 @@ const AdminKPIs = () => {
             <TruckIcon width={20} height={20} />
           </div>
         </div>
-        <div className="stat-value">{enRuta}</div>
+        <div className="stat-value">
+          {isLoading ? (
+            <Spinner color={"text-primary"} size={"spinner-border-md"} />
+          ) : (
+            enRuta
+          )}
+        </div>
         <div className="stat-change">En camino a destino</div>
       </article>
 
@@ -62,7 +82,13 @@ const AdminKPIs = () => {
             <UsersIcon />
           </div>
         </div>
-        <div className="stat-value">{totalUsuarios}</div>
+        <div className="stat-value">
+          {isLoading ? (
+            <Spinner color={"text-primary"} size={"spinner-border-md"} />
+          ) : (
+            totalUsuarios
+          )}
+        </div>
         <div className="stat-change">Total en el sistema</div>
       </article>
 
@@ -73,7 +99,13 @@ const AdminKPIs = () => {
             <ClockIcon />
           </div>
         </div>
-        <div className="stat-value">{pendientes}</div>
+        <div className="stat-value">
+          {isLoading ? (
+            <Spinner color={"text-primary"} size={"spinner-border-md"} />
+          ) : (
+            pendientes
+          )}
+        </div>
         <div className="stat-change">Por recoger</div>
       </article>
     </section>

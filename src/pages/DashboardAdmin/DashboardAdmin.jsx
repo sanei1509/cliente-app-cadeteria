@@ -1,6 +1,8 @@
 import AdminNavbar from './AdminNavbar';
 import AdminKPIs from './AdminKPIs';
 import AdminListaEnvios from './AdminListaEnvios';
+import EnviosPorUsuario from './EnviosPorUsuario';
+import TasaExito from './TasaExito';
 
  const DashboardAdmin = () => {
   return (
@@ -17,7 +19,13 @@ import AdminListaEnvios from './AdminListaEnvios';
         </div>
 
         <AdminKPIs />
-        
+
+        {/* Gráficas */}
+        <div className="charts-grid">
+          <EnviosPorUsuario />
+          <TasaExito />
+        </div>
+
         <AdminListaEnvios />
       </div>
     </div>

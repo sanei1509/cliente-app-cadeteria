@@ -69,7 +69,18 @@ const Navbar = () => {
         <div className="navbar-brand-icon">
           <TruckIcon />
         </div>
-        <span>CadeteriaApp</span>
+        <div style={{ display: 'flex', flexDirection: 'column' }}>
+          <span>CadeteriaApp</span>
+          {user?.empresa && (
+            <span style={{
+              fontSize: '0.75rem',
+              color: 'var(--text-secondary)',
+              fontWeight: '400'
+            }}>
+              {user.empresa}
+            </span>
+          )}
+        </div>
       </div>
 
       <div className="navbar-user">
@@ -109,38 +120,8 @@ const Navbar = () => {
           {dropdownOpen && (
             <div className="navbar-dropdown">
               <div className="dropdown-user-info">
-                {/* Avatar en el dropdown */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
-                  {userImage && !imageError ? (
-                    <img
-                      src={userImage}
-                      alt={userName}
-                      style={{
-                        width: '48px',
-                        height: '48px',
-                        borderRadius: '50%',
-                        objectFit: 'cover',
-                        border: '2px solid var(--border-color)'
-                      }}
-                      onError={() => setImageError(true)}
-                    />
-                  ) : (
-                    <div
-                      className="navbar-avatar"
-                      style={{
-                        width: '48px',
-                        height: '48px',
-                        fontSize: '1.2rem'
-                      }}
-                    >
-                      {userInitials}
-                    </div>
-                  )}
-                  <div>
-                    <div className="dropdown-user-name">{userName}</div>
-                    <div className="dropdown-user-email">{userEmail}</div>
-                  </div>
-                </div>
+                <div className="dropdown-user-name">{userName}</div>
+                <div className="dropdown-user-email">{userEmail}</div>
               </div>
               <div className="dropdown-divider"></div>
               {userPlan.toLowerCase() === 'premium' && (

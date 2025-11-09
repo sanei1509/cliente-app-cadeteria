@@ -5,6 +5,7 @@ import { setEnvios, setEnviosLoading } from '../../features/enviosSlice';
 import { API_CESAR } from '../../api/config';
 import AdminFiltros from './AdminFiltros';
 import AdminTablaEnvio from './AdminTablaEnvio';
+import { Spinner } from "../../components/Spinner";
 
 function getUserIdFromEnvio(envio) {
   // Puede venir como string o como objeto con _id/id, o campo userId
@@ -21,6 +22,19 @@ const AdminListaEnvios = () => {
   const [filtroEstado, setFiltroEstado] = useState('todos');
   const [filtroTamano, setFiltroTamano] = useState('todos');
   const [filtroUsuarioId, setFiltroUsuarioId] = useState(''); // << NUEVO
+  const [fechaEspecifica, setFechaEspecifica] = useState('');
+  const [fechaDesde, setFechaDesde] = useState('');
+  const [fechaHasta, setFechaHasta] = useState('');
+
+  const limpiarFiltros = () => {
+    setFiltroFecha('historico');
+    setFiltroEstado('todos');
+    setFiltroTamano('todos');
+    setFiltroUsuarioId('');
+    setFechaEspecifica('');
+    setFechaDesde('');
+    setFechaHasta('');
+  };
 
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -70,6 +84,56 @@ const AdminListaEnvios = () => {
       .finally(() => dispatch(setEnviosLoading(false)));
   };
 
+  // Función para filtrar por fecha con prioridad
+  const cumpleFiltroFecha = (fechaStr) => {
+    const ahora = new Date();
+    const fechaEnvio = parseLocalDateOnly(fechaStr || "");
+    if (Number.isNaN(fechaEnvio?.getTime?.())) return false;
+
+    // Normalizar fechaEnvio al inicio del día
+    const fechaEnvioNormalizada = startOfDay(fechaEnvio);
+
+    // Prioridad 1: Filtro de fecha específica
+    if (fechaEspecifica) {
+      const fechaEsp = startOfDay(parseLocalDateOnly(fechaEspecifica));
+      return fechaEnvioNormalizada.getTime() === fechaEsp.getTime();
+    }
+
+    // Prioridad 2: Filtro de rango desde-hasta
+    if (fechaDesde || fechaHasta) {
+      if (fechaDesde && fechaHasta) {
+        const desde = startOfDay(parseLocalDateOnly(fechaDesde));
+        const hasta = startOfDay(parseLocalDateOnly(fechaHasta));
+        return fechaEnvioNormalizada >= desde && fechaEnvioNormalizada <= hasta;
+      } else if (fechaDesde) {
+        const desde = startOfDay(parseLocalDateOnly(fechaDesde));
+        return fechaEnvioNormalizada >= desde;
+      } else if (fechaHasta) {
+        const hasta = startOfDay(parseLocalDateOnly(fechaHasta));
+        return fechaEnvioNormalizada <= hasta;
+      }
+    }
+
+    // Prioridad 3: Filtros rápidos (histórico, semana, mes)
+    if (filtroFecha === "historico") return true;
+
+    if (filtroFecha === "semana") {
+      const unaSemanaAtras = new Date(ahora);
+      unaSemanaAtras.setDate(ahora.getDate() - 7);
+      const unaSemanaAtrasNormalizada = startOfDay(unaSemanaAtras);
+      return fechaEnvioNormalizada >= unaSemanaAtrasNormalizada;
+    }
+
+    if (filtroFecha === "mes") {
+      const unMesAtras = new Date(ahora);
+      unMesAtras.setMonth(ahora.getMonth() - 1);
+      const unMesAtrasNormalizado = startOfDay(unMesAtras);
+      return fechaEnvioNormalizada >= unMesAtrasNormalizado;
+    }
+
+    return true;
+  };
+
   // Aplicar TODOS los filtros del lado del cliente
   const enviosFiltrados = allEnvios.filter((e) => {
     // Filtro por estado
@@ -82,20 +146,10 @@ const AdminListaEnvios = () => {
       return false;
     }
 
-    // Filtro por fecha
-    if (filtroFecha !== 'historico') {
-      const fechaEnvio = new Date(e.fechaRetiro || e.fechaCreacion || e.createdAt);
-      const ahora = new Date();
-
-      if (filtroFecha === 'semana') {
-        const unaSemanaAtras = new Date(ahora);
-        unaSemanaAtras.setDate(ahora.getDate() - 7);
-        if (fechaEnvio < unaSemanaAtras) return false;
-      } else if (filtroFecha === 'mes') {
-        const unMesAtras = new Date(ahora);
-        unMesAtras.setMonth(ahora.getMonth() - 1);
-        if (fechaEnvio < unMesAtras) return false;
-      }
+    // Filtro por fecha (usa la función con prioridad)
+    const baseFecha = e.fechaRetiro || e.fechaCreacion || e.createdAt;
+    if (!cumpleFiltroFecha(baseFecha)) {
+      return false;
     }
 
     // Filtro por usuario (ID o nombre)
@@ -140,20 +194,28 @@ const AdminListaEnvios = () => {
         </p>
       </div>
 
-      <AdminFiltros 
+      <AdminFiltros
         filtroFecha={filtroFecha}
         filtroEstado={filtroEstado}
         filtroTamano={filtroTamano}
-        filtroUsuarioId={filtroUsuarioId}            // << NUEVO
+        filtroUsuarioId={filtroUsuarioId}
+        fechaEspecifica={fechaEspecifica}
+        fechaDesde={fechaDesde}
+        fechaHasta={fechaHasta}
         onChangeFecha={setFiltroFecha}
         onChangeEstado={setFiltroEstado}
         onChangeTamano={setFiltroTamano}
-        onChangeUsuarioId={setFiltroUsuarioId}       // << NUEVO
+        onChangeUsuarioId={setFiltroUsuarioId}
+        onChangeFechaEspecifica={setFechaEspecifica}
+        onChangeFechaDesde={setFechaDesde}
+        onChangeFechaHasta={setFechaHasta}
+        onClear={limpiarFiltros}
       />
 
       {isLoading && (
-        <div style={{ padding: "2rem", textAlign: "center" }}>
-          <p>Cargando envíos...</p>
+        <div style={{ padding: "2rem", textAlign: "center", display: "flex", justifyContent: "center", alignItems: "center", gap: "0.5rem" }}>
+          <Spinner color={"text-primary"} size={"spinner-border-md"} />
+          <span>Cargando envíos...</span>
         </div>
       )}
 
@@ -198,5 +260,26 @@ const AdminListaEnvios = () => {
     </section>
   );
 };
+
+// Helper function to normalize any date to start of day (midnight)
+function startOfDay(date) {
+  const d = new Date(date);
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
+
+// Helper function to parse dates locally without timezone issues
+function parseLocalDateOnly(value) {
+  // Si es string, extrae siempre YYYY-MM-DD y construye un Date local sin TZ
+  if (typeof value === "string") {
+    const m = value.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (m) {
+      const [_, y, mo, d] = m;
+      return new Date(Number(y), Number(mo) - 1, Number(d));
+    }
+  }
+  // Si ya es Date u otro formato, cae al parse normal
+  return new Date(value);
+}
 
 export default AdminListaEnvios;

@@ -2,15 +2,33 @@
 const Filtros = ({
   filtroFecha,
   filtroEstado,
+  fechaEspecifica,
+  fechaDesde,
+  fechaHasta,
   onChangeFecha,
   onChangeEstado,
-  onClear, // se recibe por props
+  onChangeFechaEspecifica,
+  onChangeFechaDesde,
+  onChangeFechaHasta,
+  onClear,
 }) => {
-  const hayCambios = !(filtroFecha === 'historico' && filtroEstado === 'todos');
+  const hayCambios = !(
+    filtroFecha === 'historico' &&
+    filtroEstado === 'todos' &&
+    !fechaEspecifica &&
+    !fechaDesde &&
+    !fechaHasta
+  );
+
+  const handleClearDates = () => {
+    onChangeFechaEspecifica('');
+    onChangeFechaDesde('');
+    onChangeFechaHasta('');
+  };
 
   return (
     <>
-      {/* Fila: filtros por fecha */}
+      {/* Fila: filtros por fecha rápidos */}
       <div className="filters-container">
         <span className="filter-label">Filtrar por fecha:</span>
         <div className="filter-buttons">
@@ -35,6 +53,66 @@ const Filtros = ({
           >
             Último mes
           </button>
+        </div>
+      </div>
+
+      {/* Fila: filtros de fecha específicos */}
+      <div className="filters-container" style={{ marginTop: '1rem' }}>
+        <span className="filter-label">Filtros avanzados:</span>
+        <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+            <label htmlFor="fechaEspecifica" style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
+              Fecha específica:
+            </label>
+            <input
+              id="fechaEspecifica"
+              type="date"
+              value={fechaEspecifica}
+              onChange={(e) => onChangeFechaEspecifica(e.target.value)}
+              className="form-input"
+              style={{ padding: '0.5rem', minWidth: '150px' }}
+            />
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+            <label htmlFor="fechaDesde" style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
+              Desde:
+            </label>
+            <input
+              id="fechaDesde"
+              type="date"
+              value={fechaDesde}
+              onChange={(e) => onChangeFechaDesde(e.target.value)}
+              className="form-input"
+              style={{ padding: '0.5rem', minWidth: '150px' }}
+            />
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+            <label htmlFor="fechaHasta" style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
+              Hasta:
+            </label>
+            <input
+              id="fechaHasta"
+              type="date"
+              value={fechaHasta}
+              onChange={(e) => onChangeFechaHasta(e.target.value)}
+              className="form-input"
+              style={{ padding: '0.5rem', minWidth: '150px' }}
+            />
+          </div>
+
+          {(fechaEspecifica || fechaDesde || fechaHasta) && (
+            <button
+              type="button"
+              className="filter-btn"
+              onClick={handleClearDates}
+              style={{ alignSelf: 'flex-end', marginBottom: '0.25rem' }}
+              title="Limpiar fechas"
+            >
+              Limpiar fechas
+            </button>
+          )}
         </div>
       </div>
 

@@ -47,8 +47,8 @@ export default function Register() {
     setIsSubmitting(true);
 
     // Separar nombre y apellido
-    const [nombre, ...resto] = formData.fullName.trim().split(" ");
-    const apellido = resto.length ? resto.join(" ") : "-";
+    const [nombre, ...resto] = formData.fullName.trim().split(/\s+/);
+    const apellido = resto.join(" ");
 
     let imageUrl;
 
@@ -93,6 +93,7 @@ export default function Register() {
       email: formData.email,
     };
     if (imageUrl) payload.imageUrl = imageUrl; // solo si existe
+    if (formData.empresa) payload.empresa = formData.empresa; // solo si existe
 
     console.log("Payload a enviar:", payload);
     console.log("Tipo de imageUrl:", typeof payload.imageUrl);
@@ -187,10 +188,17 @@ export default function Register() {
               placeholder="Juan Pérez"
               autoComplete="name"
               {...register("fullName", {
-                required: "⚠️ Por favor ingresa tu nombre completo",
+                required: "Por favor ingresa tu nombre completo",
                 minLength: {
                   value: 3,
-                  message: "⚠️ El nombre debe tener al menos 3 caracteres",
+                  message: "El nombre debe tener al menos 3 caracteres",
+                },
+                validate: (value) => {
+                  const palabras = value.trim().split(/\s+/);
+                  if (palabras.length < 2) {
+                    return "Debes ingresar al menos nombre y apellido";
+                  }
+                  return true;
                 },
               })}
               style={errors.fullName ? { borderColor: '#dc2626' } : {}}
@@ -217,27 +225,56 @@ export default function Register() {
               placeholder="tu_usuario"
               autoComplete="username"
               {...register("username", {
-                required: "⚠️ El nombre de usuario es obligatorio",
+                required: "El nombre de usuario es obligatorio",
                 minLength: {
                   value: 2,
-                  message: "⚠️ El usuario debe tener al menos 2 caracteres",
+                  message: "El usuario debe tener al menos 2 caracteres",
                 },
                 maxLength: {
                   value: 50,
-                  message: "⚠️ El usuario debe tener como máximo 50 caracteres",
+                  message: "El usuario debe tener como máximo 50 caracteres",
                 },
               })}
               style={errors.username ? { borderColor: '#dc2626' } : {}}
             />
             {errors.username && (
-              <span style={{ 
-                color: '#dc2626', 
-                fontSize: '0.875rem', 
+              <span style={{
+                color: '#dc2626',
+                fontSize: '0.875rem',
                 marginTop: '0.25rem',
                 display: 'block',
                 fontWeight: '500'
               }}>
                 {errors.username.message}
+              </span>
+            )}
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="empresa" className="form-label">Empresa (opcional)</label>
+            <input
+              type="text"
+              id="empresa"
+              className={`form-input ${errors.empresa ? 'is-invalid' : ''}`}
+              placeholder="Nombre de tu empresa"
+              autoComplete="organization"
+              {...register("empresa", {
+                minLength: {
+                  value: 2,
+                  message: "El nombre de la empresa debe tener al menos 2 caracteres",
+                },
+              })}
+              style={errors.empresa ? { borderColor: '#dc2626' } : {}}
+            />
+            {errors.empresa && (
+              <span style={{
+                color: '#dc2626',
+                fontSize: '0.875rem',
+                marginTop: '0.25rem',
+                display: 'block',
+                fontWeight: '500'
+              }}>
+                {errors.empresa.message}
               </span>
             )}
           </div>
@@ -269,10 +306,10 @@ export default function Register() {
               placeholder="tu@email.com"
               autoComplete="email"
               {...register("email", {
-                required: "⚠️ Por favor ingresa tu email",
+                required: "Por favor ingresa tu email",
                 pattern: {
                   value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-                  message: "⚠️ Formato de email inválido",
+                  message: "Formato de email inválido",
                 },
               })}
               style={errors.email ? { borderColor: '#dc2626' } : {}}
@@ -299,10 +336,10 @@ export default function Register() {
               placeholder="+54 11 1234-5678"
               autoComplete="tel"
               {...register("phone", {
-                required: "⚠️ Por favor ingresa un teléfono válido",
+                required: "Por favor ingresa un teléfono válido",
                 minLength: {
                   value: 8,
-                  message: "⚠️ El teléfono debe tener al menos 8 dígitos",
+                  message: "El teléfono debe tener al menos 8 dígitos",
                 },
               })}
               style={errors.phone ? { borderColor: '#dc2626' } : {}}
@@ -329,10 +366,10 @@ export default function Register() {
               placeholder="Mínimo 4 caracteres"
               autoComplete="new-password"
               {...register("password", {
-                required: "⚠️ La contraseña es obligatoria",
+                required: "La contraseña es obligatoria",
                 minLength: {
                   value: 4,
-                  message: "⚠️ La contraseña debe tener al menos 4 caracteres",
+                  message: "La contraseña debe tener al menos 4 caracteres",
                 },
               })}
               style={errors.password ? { borderColor: '#dc2626' } : {}}
@@ -359,9 +396,9 @@ export default function Register() {
               placeholder="Repite tu contraseña"
               autoComplete="new-password"
               {...register("confirmPassword", {
-                required: "⚠️ Debes confirmar tu contraseña",
+                required: "Debes confirmar tu contraseña",
                 validate: (value) =>
-                  value === password || "⚠️ Las contraseñas no coinciden",
+                  value === password || "Las contraseñas no coinciden",
               })}
               style={errors.confirmPassword ? { borderColor: '#dc2626' } : {}}
             />
@@ -384,7 +421,7 @@ export default function Register() {
                 type="checkbox"
                 id="terms"
                 {...register("terms", {
-                  required: "⚠️ Debes aceptar los términos y condiciones",
+                  required: "Debes aceptar los términos y condiciones",
                 })}
               />
               <label htmlFor="terms">

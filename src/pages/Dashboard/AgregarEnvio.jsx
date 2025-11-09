@@ -168,10 +168,10 @@ const AgregarEnvio = () => {
                             className={`form-input ${errors.origenCalle ? 'is-invalid' : ''}`}
                             placeholder="Ej: Av. 18 de Julio"
                             {...register("origenCalle", {
-                                required: "⚠️ La calle de origen es requerida",
+                                required: "La calle de origen es requerida",
                                 minLength: {
                                     value: 3,
-                                    message: "⚠️ La calle debe tener al menos 3 caracteres",
+                                    message: "La calle debe tener al menos 3 caracteres",
                                 },
                             })}
                             style={errors.origenCalle ? { borderColor: '#dc2626' } : {}}
@@ -195,7 +195,7 @@ const AgregarEnvio = () => {
                                 className={`form-input ${errors.origenNumero ? 'is-invalid' : ''}`}
                                 placeholder="1234"
                                 {...register("origenNumero", {
-                                    required: "⚠️ El número es requerido",
+                                    required: "El número es requerido",
                                 })}
                                 style={errors.origenNumero ? { borderColor: '#dc2626' } : {}}
                             />
@@ -216,10 +216,10 @@ const AgregarEnvio = () => {
                                 className={`form-input ${errors.origenCiudad ? 'is-invalid' : ''}`}
                                 placeholder="Montevideo"
                                 {...register("origenCiudad", {
-                                    required: "⚠️ La ciudad es requerida",
+                                    required: "La ciudad es requerida",
                                     minLength: {
                                         value: 3,
-                                        message: "⚠️ La ciudad debe tener al menos 3 caracteres",
+                                        message: "La ciudad debe tener al menos 3 caracteres",
                                     },
                                 })}
                                 style={errors.origenCiudad ? { borderColor: '#dc2626' } : {}}
@@ -255,10 +255,10 @@ const AgregarEnvio = () => {
                             className={`form-input ${errors.destinoCalle ? 'is-invalid' : ''}`}
                             placeholder="Ej: Av. Italia"
                             {...register("destinoCalle", {
-                                required: "⚠️ La calle de destino es requerida",
+                                required: "La calle de destino es requerida",
                                 minLength: {
                                     value: 3,
-                                    message: "⚠️ La calle debe tener al menos 3 caracteres",
+                                    message: "La calle debe tener al menos 3 caracteres",
                                 },
                             })}
                             style={errors.destinoCalle ? { borderColor: '#dc2626' } : {}}
@@ -282,7 +282,7 @@ const AgregarEnvio = () => {
                                 className={`form-input ${errors.destinoNumero ? 'is-invalid' : ''}`}
                                 placeholder="5678"
                                 {...register("destinoNumero", {
-                                    required: "⚠️ El número es requerido",
+                                    required: "El número es requerido",
                                 })}
                                 style={errors.destinoNumero ? { borderColor: '#dc2626' } : {}}
                             />
@@ -303,10 +303,10 @@ const AgregarEnvio = () => {
                                 className={`form-input ${errors.destinoCiudad ? 'is-invalid' : ''}`}
                                 placeholder="Punta del Este"
                                 {...register("destinoCiudad", {
-                                    required: "⚠️ La ciudad es requerida",
+                                    required: "La ciudad es requerida",
                                     minLength: {
                                         value: 3,
-                                        message: "⚠️ La ciudad debe tener al menos 3 caracteres",
+                                        message: "La ciudad debe tener al menos 3 caracteres",
                                     },
                                 })}
                                 style={errors.destinoCiudad ? { borderColor: '#dc2626' } : {}}
@@ -352,9 +352,9 @@ const AgregarEnvio = () => {
                                             today.setHours(0, 0, 0, 0);
                                             const tomorrow = new Date(today);
                                             tomorrow.setDate(tomorrow.getDate() + 1);
-                                            
+
                                             if (selected < tomorrow) {
-                                                return "⚠️ La fecha de retiro debe ser a partir de mañana";
+                                                return "La fecha de retiro debe ser a partir de mañana";
                                             }
                                             return true;
                                         },
@@ -379,10 +379,10 @@ const AgregarEnvio = () => {
                                 className={`form-input ${errors.horaRetiroAprox ? 'is-invalid' : ''}`}
                                 placeholder="14:30"
                                 {...register("horaRetiroAprox", {
-                                    required: "⚠️ La hora aproximada es requerida",
+                                    required: "La hora aproximada es requerida",
                                     pattern: {
                                         value: /^([01]\d|2[0-3]):[0-5]\d$/,
-                                        message: "⚠️ Formato inválido. Usa HH:mm (ejemplo: 14:30)",
+                                        message: "Formato inválido. Usa HH:mm (ejemplo: 14:30)",
                                     },
                                 })}
                                 style={errors.horaRetiroAprox ? { borderColor: '#dc2626' } : {}}
@@ -407,7 +407,7 @@ const AgregarEnvio = () => {
                                 className={`form-input ${errors.tamanoPaquete ? 'is-invalid' : ''}`}
                                 defaultValue=""
                                 {...register("tamanoPaquete", {
-                                    required: "⚠️ Selecciona un tamaño de paquete",
+                                    required: "Selecciona un tamaño de paquete",
                                 })}
                                 style={errors.tamanoPaquete ? { borderColor: '#dc2626' } : {}}
                             >
@@ -440,7 +440,7 @@ const AgregarEnvio = () => {
                                 className={`form-input ${errors.categoriaId ? 'is-invalid' : ''}`}
                                 disabled={catLoading || categorias.length === 0}
                                 {...register("categoriaId", {
-                                    required: "⚠️ Selecciona una categoría",
+                                    required: "Selecciona una categoría",
                                 })}
                                 style={errors.categoriaId ? { borderColor: '#dc2626' } : {}}
                             >

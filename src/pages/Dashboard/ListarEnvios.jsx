@@ -7,6 +7,7 @@ import { useNavigate } from "react-router-dom";
 import Filtros from "./Filtros";
 import { Spinner } from "../../components/Spinner";
 import { toast } from 'react-toastify';
+import ConfirmModal from "../../components/ConfirmModal";
 
 
 const ListarEnvios = () => {
@@ -18,9 +19,19 @@ const ListarEnvios = () => {
   // Estados de filtros (cliente)
   const [filtroFecha, setFiltroFecha] = useState('historico'); // 'historico' | 'semana' | 'mes'
   const [filtroEstado, setFiltroEstado] = useState('todos');     // 'todos' | 'pendiente' | 'en_ruta' | 'entregado' | 'cancelado'
+  const [fechaEspecifica, setFechaEspecifica] = useState('');
+  const [fechaDesde, setFechaDesde] = useState('');
+  const [fechaHasta, setFechaHasta] = useState('');
+  // Estados para modal de confirmación
+  const [confirmModalOpen, setConfirmModalOpen] = useState(false);
+  const [pendingCancelId, setPendingCancelId] = useState(null);
+
   const limpiarFiltros = () => {
     setFiltroFecha('historico');
     setFiltroEstado('todos');
+    setFechaEspecifica('');
+    setFechaDesde('');
+    setFechaHasta('');
   };
 
 
@@ -96,8 +107,14 @@ const ListarEnvios = () => {
   };
 
   const handleCancelar = (id) => {
-    if (!window.confirm("¿Estás seguro de cancelar este envío?")) return;
-    toast.success("Envío cancelado exitosamente");
+    setPendingCancelId(id);
+    setConfirmModalOpen(true);
+  };
+
+  const confirmarCancelarEnvio = () => {
+    const id = pendingCancelId;
+    setConfirmModalOpen(false);
+    setPendingCancelId(null);
 
     setCancelingIds((prev) => new Set(prev).add(id));
     const token = localStorage.getItem("token");
@@ -113,7 +130,7 @@ const ListarEnvios = () => {
       .then(async (res) => {
         if (!res.ok) {
           const err = await res.json().catch(() => null);
-          alert(`No se pudo cancelar: ${err?.message || res.statusText}`);
+          toast.error(`No se pudo cancelar: ${err?.message || res.statusText}`);
           return;
         }
 
@@ -127,9 +144,10 @@ const ListarEnvios = () => {
           // fallback optimista: al menos marcar estado cancelado
           dispatch(updateEnvio({ id, updatedEnvio: { estado: "cancelado" } }));
         }
+        toast.success("Envío cancelado exitosamente");
       })
       .catch(() => {
-        alert("Error de conexión. Intentá nuevamente.");
+        toast.error("Error de conexión. Intentá nuevamente.");
       })
       .finally(() => {
         setCancelingIds((prev) => {
@@ -182,23 +200,50 @@ const ListarEnvios = () => {
     };
     const rank = (s) => STATUS_RANK[s] ?? 99;
 
-    // 2) Filtro por rango de fechas
-    const dentroDeRango = (fechaStr) => {
-      if (filtroFecha === "historico") return true;
-
+    // 2) Filtro por rango de fechas y filtros avanzados
+    const cumpleFiltroFecha = (fechaStr) => {
       const fechaEnvio = parseLocalDateOnly(fechaStr || "");
       if (Number.isNaN(fechaEnvio?.getTime?.())) return false;
+
+      // Normalizar fechaEnvio al inicio del día
+      const fechaEnvioNormalizada = startOfDay(fechaEnvio);
+
+      // Filtro de fecha específica (tiene prioridad sobre otros filtros)
+      if (fechaEspecifica) {
+        const fechaEsp = startOfDay(parseLocalDateOnly(fechaEspecifica));
+        return fechaEnvioNormalizada.getTime() === fechaEsp.getTime();
+      }
+
+      // Filtro de rango desde-hasta
+      if (fechaDesde || fechaHasta) {
+        if (fechaDesde && fechaHasta) {
+          const desde = startOfDay(parseLocalDateOnly(fechaDesde));
+          const hasta = startOfDay(parseLocalDateOnly(fechaHasta));
+          return fechaEnvioNormalizada >= desde && fechaEnvioNormalizada <= hasta;
+        } else if (fechaDesde) {
+          const desde = startOfDay(parseLocalDateOnly(fechaDesde));
+          return fechaEnvioNormalizada >= desde;
+        } else if (fechaHasta) {
+          const hasta = startOfDay(parseLocalDateOnly(fechaHasta));
+          return fechaEnvioNormalizada <= hasta;
+        }
+      }
+
+      // Filtros rápidos (histórico, semana, mes)
+      if (filtroFecha === "historico") return true;
 
       if (filtroFecha === "semana") {
         const unaSemanaAtras = new Date(ahora);
         unaSemanaAtras.setDate(ahora.getDate() - 7);
-        return fechaEnvio >= unaSemanaAtras;
+        const unaSemanaAtrasNormalizada = startOfDay(unaSemanaAtras);
+        return fechaEnvioNormalizada >= unaSemanaAtrasNormalizada;
       }
 
       if (filtroFecha === "mes") {
         const unMesAtras = new Date(ahora);
         unMesAtras.setMonth(ahora.getMonth() - 1);
-        return fechaEnvio >= unMesAtras;
+        const unMesAtrasNormalizado = startOfDay(unMesAtras);
+        return fechaEnvioNormalizada >= unMesAtrasNormalizado;
       }
 
       return true;
@@ -208,7 +253,7 @@ const ListarEnvios = () => {
     const fil = (allEnvios || []).filter((e) => {
       if (filtroEstado !== "todos" && e.estado !== filtroEstado) return false;
       const baseFecha = e.fechaRetiro || e.fecha || e.createdAt;
-      return dentroDeRango(baseFecha);
+      return cumpleFiltroFecha(baseFecha);
     });
 
     // 4) Fecha segura (para ordenar dentro del mismo estado)
@@ -226,7 +271,7 @@ const ListarEnvios = () => {
       if (ra !== rb) return ra - rb;          // primero por estado
       return getTime(b) - getTime(a);         // luego por fecha (más futura arriba)
     });
-  }, [allEnvios, filtroEstado, filtroFecha]);
+  }, [allEnvios, filtroEstado, filtroFecha, fechaEspecifica, fechaDesde, fechaHasta]);
 
 
   return (
@@ -234,9 +279,15 @@ const ListarEnvios = () => {
       <Filtros
         filtroFecha={filtroFecha}
         filtroEstado={filtroEstado}
+        fechaEspecifica={fechaEspecifica}
+        fechaDesde={fechaDesde}
+        fechaHasta={fechaHasta}
         onChangeFecha={setFiltroFecha}
         onChangeEstado={setFiltroEstado}
-        onClear={() => { setFiltroFecha('historico'); setFiltroEstado('todos'); }}
+        onChangeFechaEspecifica={setFechaEspecifica}
+        onChangeFechaDesde={setFechaDesde}
+        onChangeFechaHasta={setFechaHasta}
+        onClear={limpiarFiltros}
       />
 
       {isLoading && (
@@ -347,6 +398,20 @@ const ListarEnvios = () => {
           cargarEnvios();
         }}
       />
+
+      <ConfirmModal
+        isOpen={confirmModalOpen}
+        onClose={() => {
+          setConfirmModalOpen(false);
+          setPendingCancelId(null);
+        }}
+        onConfirm={confirmarCancelarEnvio}
+        title="Cancelar Envío"
+        message="¿Estás seguro de cancelar este envío?"
+        confirmText="Cancelar Envío"
+        cancelText="Volver"
+        type="danger"
+      />
     </>
   );
 };
@@ -356,6 +421,13 @@ function startOfLocalDay(d) {
   const x = new Date(d);
   x.setHours(0, 0, 0, 0);
   return x;
+}
+
+// Helper function to normalize any date to start of day (midnight)
+function startOfDay(date) {
+  const d = new Date(date);
+  d.setHours(0, 0, 0, 0);
+  return d;
 }
 
 function parseLocalDateOnly(value) {
