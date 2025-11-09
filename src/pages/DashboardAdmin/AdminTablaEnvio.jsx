@@ -42,11 +42,23 @@ const AdminTablaEnvio = ({ envio }) => {
     return estados[estado] || estado;
   };
 
-  const formatearFecha = (fecha) => {
-    if (!fecha) return "-";
-    const date = new Date(fecha);
-    return date.toLocaleDateString("es-UY");
-  };
+  function parseLocalDateOnly(value) {
+  if (typeof value === "string") {
+    const m = value.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (m) {
+      const [_, y, mo, d] = m;
+      return new Date(Number(y), Number(mo) - 1, Number(d)); // LOCAL
+    }
+  }
+  return new Date(value);
+}
+
+const formatearFecha = (fecha) => {
+  if (!fecha) return "-";
+  const d = parseLocalDateOnly(fecha);
+  return isNaN(d) ? "-" : d.toLocaleDateString("es-UY");
+};
+
 
   const handleCambiarEstado = (e) => {
     const nuevoEstado = e.target.value;

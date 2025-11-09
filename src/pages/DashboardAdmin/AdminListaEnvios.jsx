@@ -8,7 +8,6 @@ import AdminTablaEnvio from './AdminTablaEnvio';
 import { Spinner } from "../../components/Spinner";
 
 function getUserIdFromEnvio(envio) {
-  // Puede venir como string o como objeto con _id/id, o campo userId
   if (!envio) return "";
   const u = envio.user;
   if (typeof u === "string") return u;
@@ -18,13 +17,33 @@ function getUserIdFromEnvio(envio) {
 
 const AdminListaEnvios = () => {
   const [error, setError] = useState(null);
+
+  // Estados de filtros
   const [filtroFecha, setFiltroFecha] = useState('historico');
   const [filtroEstado, setFiltroEstado] = useState('todos');
   const [filtroTamano, setFiltroTamano] = useState('todos');
-  const [filtroUsuarioId, setFiltroUsuarioId] = useState(''); // << NUEVO
+  const [filtroUsuarioId, setFiltroUsuarioId] = useState('');
   const [fechaEspecifica, setFechaEspecifica] = useState('');
   const [fechaDesde, setFechaDesde] = useState('');
   const [fechaHasta, setFechaHasta] = useState('');
+
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+
+  const allEnvios = useSelector((s) => s.envios.allEnvios);
+  const isLoading = useSelector((s) => s.envios.areEnviosLoading);
+
+  // Cargar envíos cuando se monta el componente
+  useEffect(() => {
+    cargarEnvios();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Recargar cuando cambian los filtros de fecha/estado/tamaño (backend)
+  useEffect(() => {
+    cargarEnvios();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filtroFecha, filtroEstado, filtroTamano, fechaEspecifica, fechaDesde, fechaHasta]);
 
   const limpiarFiltros = () => {
     setFiltroFecha('historico');
@@ -36,19 +55,7 @@ const AdminListaEnvios = () => {
     setFechaHasta('');
   };
 
-  const dispatch = useDispatch();
-  const navigate = useNavigate();
-
-  const allEnvios = useSelector((s) => s.envios.allEnvios);
-  const isLoading = useSelector((s) => s.envios.areEnviosLoading);
-
-  // Cargar TODOS los envíos solo una vez al montar el componente
-  useEffect(() => {
-    cargarTodosLosEnvios();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const cargarTodosLosEnvios = () => {
+  const cargarEnvios = () => {
     const token = localStorage.getItem("token");
     if (!token) {
       navigate("/login");
@@ -58,8 +65,19 @@ const AdminListaEnvios = () => {
     dispatch(setEnviosLoading(true));
     setError(null);
 
-    // Cargar TODOS los envíos sin filtros
-    fetch(`${API_CESAR}/v1/envios`, {
+    // Construir query params para el backend
+    const qs = buildQueryFromFilters({
+      filtroFecha,
+      filtroEstado,
+      filtroTamano,
+      fechaEspecifica,
+      fechaDesde,
+      fechaHasta,
+    });
+
+    const url = `${API_CESAR}/v1/envios${qs ? `?${qs}` : ""}`;
+
+    fetch(url, {
       method: "GET",
       headers: {
         authorization: `Bearer ${token}`
@@ -71,7 +89,7 @@ const AdminListaEnvios = () => {
         throw new Error("Error al cargar envíos");
       })
       .then((data) => {
-        dispatch(setEnvios(data)); // Carga inicial: actualiza allEnvios y envios
+        dispatch(setEnvios(data));
       })
       .catch((e) => {
         if (e.message === "UNAUTHORIZED") {
@@ -84,74 +102,39 @@ const AdminListaEnvios = () => {
       .finally(() => dispatch(setEnviosLoading(false)));
   };
 
-  // Función para filtrar por fecha con prioridad
-  const cumpleFiltroFecha = (fechaStr) => {
-    const ahora = new Date();
-    const fechaEnvio = parseLocalDateOnly(fechaStr || "");
-    if (Number.isNaN(fechaEnvio?.getTime?.())) return false;
+  // Construir query string para el backend
+function buildQueryFromFilters({ filtroFecha, filtroEstado, filtroTamano, fechaEspecifica, fechaDesde, fechaHasta }) {
+  const qs = new URLSearchParams();
 
-    // Normalizar fechaEnvio al inicio del día
-    const fechaEnvioNormalizada = startOfDay(fechaEnvio);
+  // Estado
+  if (filtroEstado && filtroEstado !== 'todos') {
+    qs.set('estado', filtroEstado);
+  }
 
-    // Prioridad 1: Filtro de fecha específica
-    if (fechaEspecifica) {
-      const fechaEsp = startOfDay(parseLocalDateOnly(fechaEspecifica));
-      return fechaEnvioNormalizada.getTime() === fechaEsp.getTime();
-    }
+  // Tamaño
+  if (filtroTamano && filtroTamano !== 'todos') {
+    qs.set('tamanoPaquete', filtroTamano);
+  }
 
-    // Prioridad 2: Filtro de rango desde-hasta
-    if (fechaDesde || fechaHasta) {
-      if (fechaDesde && fechaHasta) {
-        const desde = startOfDay(parseLocalDateOnly(fechaDesde));
-        const hasta = startOfDay(parseLocalDateOnly(fechaHasta));
-        return fechaEnvioNormalizada >= desde && fechaEnvioNormalizada <= hasta;
-      } else if (fechaDesde) {
-        const desde = startOfDay(parseLocalDateOnly(fechaDesde));
-        return fechaEnvioNormalizada >= desde;
-      } else if (fechaHasta) {
-        const hasta = startOfDay(parseLocalDateOnly(fechaHasta));
-        return fechaEnvioNormalizada <= hasta;
-      }
-    }
+  // Fechas (misma lógica que Cliente)
+  if (fechaEspecifica) {
+    qs.set('fecha', fechaEspecifica); // <-- ESTO ES LO QUE IMPORTA
+  } else if (fechaDesde || fechaHasta) {
+    if (fechaDesde) qs.set('fechaDesde', fechaDesde);
+    if (fechaHasta) qs.set('fechaHasta', fechaHasta);
+  } else if (filtroFecha && filtroFecha !== 'historico') {
+    qs.set('ultimos', filtroFecha);
+  }
 
-    // Prioridad 3: Filtros rápidos (histórico, semana, mes)
-    if (filtroFecha === "historico") return true;
+  return qs.toString();
+}
 
-    if (filtroFecha === "semana") {
-      const unaSemanaAtras = new Date(ahora);
-      unaSemanaAtras.setDate(ahora.getDate() - 7);
-      const unaSemanaAtrasNormalizada = startOfDay(unaSemanaAtras);
-      return fechaEnvioNormalizada >= unaSemanaAtrasNormalizada;
-    }
 
-    if (filtroFecha === "mes") {
-      const unMesAtras = new Date(ahora);
-      unMesAtras.setMonth(ahora.getMonth() - 1);
-      const unMesAtrasNormalizado = startOfDay(unMesAtras);
-      return fechaEnvioNormalizada >= unMesAtrasNormalizado;
-    }
 
-    return true;
-  };
 
-  // Aplicar TODOS los filtros del lado del cliente
+
+  // Filtrar por usuario SOLO del lado del cliente (no lo soporta el backend)
   const enviosFiltrados = allEnvios.filter((e) => {
-    // Filtro por estado
-    if (filtroEstado !== 'todos' && e.estado !== filtroEstado) {
-      return false;
-    }
-
-    // Filtro por tamaño
-    if (filtroTamano !== 'todos' && e.tamanoPaquete !== filtroTamano) {
-      return false;
-    }
-
-    // Filtro por fecha (usa la función con prioridad)
-    const baseFecha = e.fechaRetiro || e.fechaCreacion || e.createdAt;
-    if (!cumpleFiltroFecha(baseFecha)) {
-      return false;
-    }
-
     // Filtro por usuario (ID o nombre)
     const needle = (filtroUsuarioId || "").trim().toLowerCase();
     if (needle) {
@@ -168,9 +151,9 @@ const AdminListaEnvios = () => {
         const nombreCompleto = `${nombre} ${apellido}`.trim();
 
         if (nombre.includes(needle) ||
-            apellido.includes(needle) ||
-            username.includes(needle) ||
-            nombreCompleto.includes(needle)) {
+          apellido.includes(needle) ||
+          username.includes(needle) ||
+          nombreCompleto.includes(needle)) {
           return true;
         }
       }
@@ -182,8 +165,17 @@ const AdminListaEnvios = () => {
   });
 
   // Ordenar envíos: más recientes primero
-  const getDate = (e) => new Date(e.fechaRetiro || e.fechaCreacion || e.createdAt || 0);
+  //const getDate = (e) => new Date(e.fechaRetiro || e.fechaCreacion || e.createdAt || 0);
+  const getDate = (e) => parseLocalDateOnly(e.fechaRetiro || e.fecha || e.fechaCreacion || e.createdAt || 0);
   const sortedEnvios = enviosFiltrados.slice().sort((a, b) => getDate(b) - getDate(a));
+
+  
+  function formatearFecha(fecha) {
+    if (!fecha) return "-";
+    const d = parseLocalDateOnly(fecha);
+    return isNaN(d) ? "-" : d.toLocaleDateString("es-UY");
+  }
+
 
   return (
     <section className="card">
@@ -261,16 +253,7 @@ const AdminListaEnvios = () => {
   );
 };
 
-// Helper function to normalize any date to start of day (midnight)
-function startOfDay(date) {
-  const d = new Date(date);
-  d.setHours(0, 0, 0, 0);
-  return d;
-}
-
-// Helper function to parse dates locally without timezone issues
 function parseLocalDateOnly(value) {
-  // Si es string, extrae siempre YYYY-MM-DD y construye un Date local sin TZ
   if (typeof value === "string") {
     const m = value.match(/^(\d{4})-(\d{2})-(\d{2})/);
     if (m) {
@@ -278,8 +261,8 @@ function parseLocalDateOnly(value) {
       return new Date(Number(y), Number(mo) - 1, Number(d));
     }
   }
-  // Si ya es Date u otro formato, cae al parse normal
   return new Date(value);
 }
+
 
 export default AdminListaEnvios;

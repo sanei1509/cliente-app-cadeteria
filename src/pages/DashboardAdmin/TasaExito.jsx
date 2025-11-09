@@ -79,41 +79,12 @@ const TasaExito = () => {
 
   return (
     <div className="card">
-      <h3 className="card-title">Tasa de Éxito de Entregas</h3>
+      <h3 className="card-title">Estado Actual de los Envíos</h3>
 
-      {/* KPI Principal */}
-      <div style={{
-        textAlign: "center",
-        padding: "1.5rem 1rem 0.5rem",
-        borderBottom: "1px solid var(--border-color)",
-        marginBottom: "1rem"
-      }}>
-        <div style={{
-          fontSize: "3rem",
-          fontWeight: "700",
-          color: parseFloat(tasaExito) >= 80 ? "#10b981" : parseFloat(tasaExito) >= 60 ? "#f59e0b" : "#ef4444",
-          lineHeight: 1
-        }}>
-          {tasaExito}%
-        </div>
-        <div style={{
-          fontSize: "0.875rem",
-          color: "var(--text-secondary)",
-          marginTop: "0.5rem"
-        }}>
-          Tasa de éxito
-        </div>
-        <div style={{
-          fontSize: "0.75rem",
-          color: "var(--text-secondary)",
-          marginTop: "0.25rem"
-        }}>
-          {entregados} entregados de {finalizados} finalizados
-        </div>
-      </div>
+      
 
       {/* Gráfico de distribución */}
-      <div style={{ width: "100%", height: "250px" }}>
+      <div style={{ width: "100%", height: "320px" }}>
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
             <Pie
@@ -122,7 +93,7 @@ const TasaExito = () => {
               nameKey="name"
               cx="50%"
               cy="50%"
-              outerRadius={80}
+              outerRadius={110}
               label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
               labelLine={true}
             >

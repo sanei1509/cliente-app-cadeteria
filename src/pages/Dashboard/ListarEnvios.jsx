@@ -25,6 +25,17 @@ const ListarEnvios = () => {
   // Estados para modal de confirmación
   const [confirmModalOpen, setConfirmModalOpen] = useState(false);
   const [pendingCancelId, setPendingCancelId] = useState(null);
+  // Cargar desde backend según filtros
+  useEffect(() => {
+    cargarEnvios();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Cada vez que un filtro cambie → volver a pedir al backend
+  useEffect(() => {
+    cargarEnvios();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filtroFecha, filtroEstado, fechaEspecifica, fechaDesde, fechaHasta]);
 
   const limpiarFiltros = () => {
     setFiltroFecha('historico');
@@ -35,6 +46,7 @@ const ListarEnvios = () => {
   };
 
 
+
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
@@ -42,19 +54,25 @@ const ListarEnvios = () => {
   const allEnvios = useSelector((s) => s.envios.allEnvios);
   const isLoading = useSelector((s) => s.envios.areEnviosLoading);
 
-  // Cargar TODOS los envíos solo una vez al montar el componente
-  useEffect(() => {
-    cargarTodosLosEnvios();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  const cargarEnvios = () => {
 
-  const cargarTodosLosEnvios = () => {
     const token = localStorage.getItem("token");
     if (!token) { navigate("/login"); return; }
-
     dispatch(setEnviosLoading(true));
-    // Cargar TODOS los envíos sin filtros
-    fetch(`${API_CESAR}/v1/envios`, {
+
+    const qs = buildQueryFromFilters({
+      filtroFecha,
+      filtroEstado,
+      fechaEspecifica,
+      fechaDesde,
+      fechaHasta,
+    });
+
+    const url = `${API_CESAR}/v1/envios${qs ? `?${qs}` : ""}`;
+
+
+    // 
+    fetch(url, {
       method: "GET",
       headers: { authorization: `Bearer ${token}` },
     })
@@ -71,9 +89,6 @@ const ListarEnvios = () => {
       .finally(() => dispatch(setEnviosLoading(false)));
   };
 
-  const cargarEnvios = () => {
-    cargarTodosLosEnvios();
-  };
 
 
   // Función para formatear fecha
@@ -105,6 +120,30 @@ const ListarEnvios = () => {
     };
     return estados[estado] || estado;
   };
+
+  // Funcion para armar las Query para los filtros
+  function buildQueryFromFilters({ filtroFecha, filtroEstado, fechaEspecifica, fechaDesde, fechaHasta }) {
+    const qs = new URLSearchParams();
+
+    // Estado (si no es "todos")
+    if (filtroEstado && filtroEstado !== 'todos') {
+      qs.set('estado', filtroEstado);
+    }
+
+    // Fechas (prioridad: específica > rango > ultimos)
+    if (fechaEspecifica) {
+      qs.set('fecha', fechaEspecifica); // YYYY-MM-DD
+    } else if (fechaDesde || fechaHasta) {
+      if (fechaDesde) qs.set('fechaDesde', fechaDesde); // YYYY-MM-DD
+      if (fechaHasta) qs.set('fechaHasta', fechaHasta); // YYYY-MM-DD
+    } else if (filtroFecha && filtroFecha !== 'historico') {
+      // 'semana' o 'mes'
+      qs.set('ultimos', filtroFecha);
+    }
+
+    return qs.toString();
+  }
+
 
   const handleCancelar = (id) => {
     setPendingCancelId(id);
@@ -158,120 +197,26 @@ const ListarEnvios = () => {
       });
   };
 
-  // Aplicar filtros del lado del cliente
-  // const enviosFiltrados = allEnvios.filter((e) => {
-  //   // Filtro por estado
-  //   if (filtroEstado !== 'todos' && e.estado !== filtroEstado) {
-  //     return false;
-  //   }
-
-  //   // Filtro por fecha
-  //   if (filtroFecha !== 'historico') {
-  //     const fechaEnvio = new Date(e.fechaRetiro || e.fecha || e.createdAt);
-  //     const ahora = new Date();
-
-  //     if (filtroFecha === 'semana') {
-  //       const unaSemanaAtras = new Date(ahora);
-  //       unaSemanaAtras.setDate(ahora.getDate() - 7);
-  //       if (fechaEnvio < unaSemanaAtras) return false;
-  //     } else if (filtroFecha === 'mes') {
-  //       const unMesAtras = new Date(ahora);
-  //       unMesAtras.setMonth(ahora.getMonth() - 1);
-  //       if (fechaEnvio < unMesAtras) return false;
-  //     }
-  //   }
-
-  //   return true;
-  // });
-
-  // // Ordenar por fecha (más futura arriba). Usa fechaRetiro > fecha > createdAt.
-  // const getDate = (e) => new Date(e.fechaRetiro || e.fecha || e.createdAt || 0);
-  // const sortedEnvios = enviosFiltrados.slice().sort((a, b) => getDate(b) - getDate(a));
 
   const sortedEnvios = useMemo(() => {
-    const ahora = new Date();
-
-    // 1) Prioridad de estados (menor = más arriba)
-    const STATUS_RANK = {
-      pendiente: 1,
-      en_ruta: 2,
-      entregado: 3,
-      cancelado: 4,
-    };
+    // Prioridad de estados
+    const STATUS_RANK = { pendiente: 1, en_ruta: 2, entregado: 3, cancelado: 4 };
     const rank = (s) => STATUS_RANK[s] ?? 99;
 
-    // 2) Filtro por rango de fechas y filtros avanzados
-    const cumpleFiltroFecha = (fechaStr) => {
-      const fechaEnvio = parseLocalDateOnly(fechaStr || "");
-      if (Number.isNaN(fechaEnvio?.getTime?.())) return false;
-
-      // Normalizar fechaEnvio al inicio del día
-      const fechaEnvioNormalizada = startOfDay(fechaEnvio);
-
-      // Filtro de fecha específica (tiene prioridad sobre otros filtros)
-      if (fechaEspecifica) {
-        const fechaEsp = startOfDay(parseLocalDateOnly(fechaEspecifica));
-        return fechaEnvioNormalizada.getTime() === fechaEsp.getTime();
-      }
-
-      // Filtro de rango desde-hasta
-      if (fechaDesde || fechaHasta) {
-        if (fechaDesde && fechaHasta) {
-          const desde = startOfDay(parseLocalDateOnly(fechaDesde));
-          const hasta = startOfDay(parseLocalDateOnly(fechaHasta));
-          return fechaEnvioNormalizada >= desde && fechaEnvioNormalizada <= hasta;
-        } else if (fechaDesde) {
-          const desde = startOfDay(parseLocalDateOnly(fechaDesde));
-          return fechaEnvioNormalizada >= desde;
-        } else if (fechaHasta) {
-          const hasta = startOfDay(parseLocalDateOnly(fechaHasta));
-          return fechaEnvioNormalizada <= hasta;
-        }
-      }
-
-      // Filtros rápidos (histórico, semana, mes)
-      if (filtroFecha === "historico") return true;
-
-      if (filtroFecha === "semana") {
-        const unaSemanaAtras = new Date(ahora);
-        unaSemanaAtras.setDate(ahora.getDate() - 7);
-        const unaSemanaAtrasNormalizada = startOfDay(unaSemanaAtras);
-        return fechaEnvioNormalizada >= unaSemanaAtrasNormalizada;
-      }
-
-      if (filtroFecha === "mes") {
-        const unMesAtras = new Date(ahora);
-        unMesAtras.setMonth(ahora.getMonth() - 1);
-        const unMesAtrasNormalizado = startOfDay(unMesAtras);
-        return fechaEnvioNormalizada >= unMesAtrasNormalizado;
-      }
-
-      return true;
-    };
-
-    // 3) Filtrar por estado + fecha
-    const fil = (allEnvios || []).filter((e) => {
-      if (filtroEstado !== "todos" && e.estado !== filtroEstado) return false;
-      const baseFecha = e.fechaRetiro || e.fecha || e.createdAt;
-      return cumpleFiltroFecha(baseFecha);
-    });
-
-    // 4) Fecha segura (para ordenar dentro del mismo estado)
+    // Fecha segura para ordenar dentro del mismo estado (más futura arriba)
     const getTime = (e) => {
       const d = parseLocalDateOnly(e.fechaRetiro || e.fecha || e.createdAt || 0);
       const t = d?.getTime?.();
-      // Si no hay fecha válida, mandalo bien abajo dentro de su grupo
       return Number.isFinite(t) ? t : -Infinity;
     };
 
-    // 5) Orden: estado (según rank) y dentro del estado, fecha desc
-    return fil.slice().sort((a, b) => {
+    return (allEnvios || []).slice().sort((a, b) => {
       const ra = rank(a.estado);
       const rb = rank(b.estado);
-      if (ra !== rb) return ra - rb;          // primero por estado
-      return getTime(b) - getTime(a);         // luego por fecha (más futura arriba)
+      if (ra !== rb) return ra - rb;
+      return getTime(b) - getTime(a);
     });
-  }, [allEnvios, filtroEstado, filtroFecha, fechaEspecifica, fechaDesde, fechaHasta]);
+  }, [allEnvios]);
 
 
   return (
