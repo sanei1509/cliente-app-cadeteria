@@ -7,6 +7,7 @@ import { addEnvio } from "../../features/enviosSlice";
 import { useDispatch, useSelector } from "react-redux";
 import { toast } from 'react-toastify';
 import { Spinner } from "../../components/Spinner";
+import Button from "../../components/Button";
 
 const AgregarEnvio = () => {
     const navigate = useNavigate();
@@ -133,8 +134,9 @@ const AgregarEnvio = () => {
                 <h3 className="card-title">Envíos</h3>
             </div>
 
-            <button
-                className="btn btn-primary"
+            <Button
+                variant="primary"
+                value="Nuevo Envío"
                 onClick={() => {
                     if (user?.plan === "plus") {
                         const enviosPendientes = envios.filter(e => e.estado === "pendiente").length;
@@ -145,12 +147,13 @@ const AgregarEnvio = () => {
                     }
                     setIsModalOpen(true);
                 }}
-            >
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" />
-                </svg>
-                Nuevo Envío
-            </button>
+                icon={
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" style={{ marginRight: 8 }}>
+                        <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" />
+                    </svg>
+                }
+                iconPosition="left"
+            />
 
             <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}>
                 <div className="modal-header">
@@ -177,9 +180,9 @@ const AgregarEnvio = () => {
                             style={errors.origenCalle ? { borderColor: '#dc2626' } : {}}
                         />
                         {errors.origenCalle && (
-                            <div style={{ 
-                                color: '#dc2626', 
-                                fontSize: '0.875rem', 
+                            <div style={{
+                                color: '#dc2626',
+                                fontSize: '0.875rem',
                                 marginTop: '0.25rem',
                                 fontWeight: '500'
                             }}>
@@ -200,9 +203,9 @@ const AgregarEnvio = () => {
                                 style={errors.origenNumero ? { borderColor: '#dc2626' } : {}}
                             />
                             {errors.origenNumero && (
-                                <div style={{ 
-                                    color: '#dc2626', 
-                                    fontSize: '0.875rem', 
+                                <div style={{
+                                    color: '#dc2626',
+                                    fontSize: '0.875rem',
                                     marginTop: '0.25rem',
                                     fontWeight: '500'
                                 }}>
@@ -225,9 +228,9 @@ const AgregarEnvio = () => {
                                 style={errors.origenCiudad ? { borderColor: '#dc2626' } : {}}
                             />
                             {errors.origenCiudad && (
-                                <div style={{ 
-                                    color: '#dc2626', 
-                                    fontSize: '0.875rem', 
+                                <div style={{
+                                    color: '#dc2626',
+                                    fontSize: '0.875rem',
                                     marginTop: '0.25rem',
                                     fontWeight: '500'
                                 }}>
@@ -264,9 +267,9 @@ const AgregarEnvio = () => {
                             style={errors.destinoCalle ? { borderColor: '#dc2626' } : {}}
                         />
                         {errors.destinoCalle && (
-                            <div style={{ 
-                                color: '#dc2626', 
-                                fontSize: '0.875rem', 
+                            <div style={{
+                                color: '#dc2626',
+                                fontSize: '0.875rem',
                                 marginTop: '0.25rem',
                                 fontWeight: '500'
                             }}>
@@ -287,9 +290,9 @@ const AgregarEnvio = () => {
                                 style={errors.destinoNumero ? { borderColor: '#dc2626' } : {}}
                             />
                             {errors.destinoNumero && (
-                                <div style={{ 
-                                    color: '#dc2626', 
-                                    fontSize: '0.875rem', 
+                                <div style={{
+                                    color: '#dc2626',
+                                    fontSize: '0.875rem',
                                     marginTop: '0.25rem',
                                     fontWeight: '500'
                                 }}>
@@ -312,9 +315,9 @@ const AgregarEnvio = () => {
                                 style={errors.destinoCiudad ? { borderColor: '#dc2626' } : {}}
                             />
                             {errors.destinoCiudad && (
-                                <div style={{ 
-                                    color: '#dc2626', 
-                                    fontSize: '0.875rem', 
+                                <div style={{
+                                    color: '#dc2626',
+                                    fontSize: '0.875rem',
                                     marginTop: '0.25rem',
                                     fontWeight: '500'
                                 }}>
@@ -363,9 +366,9 @@ const AgregarEnvio = () => {
                                 style={errors.fechaRetiro ? { borderColor: '#dc2626' } : {}}
                             />
                             {errors.fechaRetiro && (
-                                <div style={{ 
-                                    color: '#dc2626', 
-                                    fontSize: '0.875rem', 
+                                <div style={{
+                                    color: '#dc2626',
+                                    fontSize: '0.875rem',
                                     marginTop: '0.25rem',
                                     fontWeight: '500'
                                 }}>
@@ -388,9 +391,9 @@ const AgregarEnvio = () => {
                                 style={errors.horaRetiroAprox ? { borderColor: '#dc2626' } : {}}
                             />
                             {errors.horaRetiroAprox && (
-                                <div style={{ 
-                                    color: '#dc2626', 
-                                    fontSize: '0.875rem', 
+                                <div style={{
+                                    color: '#dc2626',
+                                    fontSize: '0.875rem',
                                     marginTop: '0.25rem',
                                     fontWeight: '500'
                                 }}>
@@ -417,9 +420,9 @@ const AgregarEnvio = () => {
                                 <option value="grande">Grande</option>
                             </select>
                             {errors.tamanoPaquete && (
-                                <div style={{ 
-                                    color: '#dc2626', 
-                                    fontSize: '0.875rem', 
+                                <div style={{
+                                    color: '#dc2626',
+                                    fontSize: '0.875rem',
                                     marginTop: '0.25rem',
                                     fontWeight: '500'
                                 }}>
@@ -452,9 +455,9 @@ const AgregarEnvio = () => {
                                 ))}
                             </select>
                             {errors.categoriaId && (
-                                <div style={{ 
-                                    color: '#dc2626', 
-                                    fontSize: '0.875rem', 
+                                <div style={{
+                                    color: '#dc2626',
+                                    fontSize: '0.875rem',
                                     marginTop: '0.25rem',
                                     fontWeight: '500'
                                 }}>
@@ -513,20 +516,15 @@ const AgregarEnvio = () => {
                         >
                             Cancelar
                         </button>
-                        <button
+                        <Button
                             type="submit"
-                            className="btn btn-primary btn-full"
-                            disabled={!isValid || isSubmitting}
-                        >
-                            {isSubmitting ? (
-                                <>
-                                    <Spinner color={"text-light"} size={"spinner-border-sm"} />
-                                    <span style={{ marginLeft: "0.5rem" }}>Registrando...</span>
-                                </>
-                            ) : (
-                                "Registrar Envío"
-                            )}
-                        </button>
+                            variant="primary"
+                            fullWidth
+                            disabled={!isValid}
+                            loading={isSubmitting}
+                            value="Registrar Envío"
+                            loadingValue="Registrando..."
+                        />
                     </div>
                 </form>
             </Modal>

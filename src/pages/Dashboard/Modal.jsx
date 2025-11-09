@@ -1,19 +1,6 @@
 import { useEffect } from 'react';
 
-/**
- * Componente Modal reutilizable
- *
- * Props:
- * - isOpen (boolean): Controla si el modal está visible o no
- * - onClose (function): Función que se ejecuta al cerrar el modal
- * - children (ReactNode): Contenido que se renderiza dentro del modal
- *
- * Ejemplo de uso:
- * <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}>
- *   <h2>Mi título</h2>
- *   <form>...</form>
- * </Modal>
- */
+
 const Modal = ({ isOpen, onClose, children }) => {
     // Bloquear el scroll del body cuando el modal está abierto
     useEffect(() => {

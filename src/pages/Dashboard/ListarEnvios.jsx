@@ -8,6 +8,7 @@ import Filtros from "./Filtros";
 import { Spinner } from "../../components/Spinner";
 import { toast } from 'react-toastify';
 import ConfirmModal from "../../components/ConfirmModal";
+import Button from "../../components/Button";
 
 
 const ListarEnvios = () => {
@@ -275,59 +276,70 @@ const ListarEnvios = () => {
             </tr>
           </thead>
           <tbody>
-            {sortedEnvios.map((envio) => (
-              <tr key={`row-${envio.id}`}>
-                <td>{envio.codigoSeguimiento || (envio.id ? envio.id.substring(0, 8) : "-")}</td>
-                <td>
-                  <div style={{ fontSize: "0.85rem" }}>
-                    <div>
-                      <strong>Origen:</strong> {envio.origen?.ciudad || "-"}
+            {sortedEnvios.map((envio) => {
+              const canceling = cancelingIds.has(envio.id);
+
+              return (
+                <tr key={`row-${envio.id}`}>
+                  <td>{envio.codigoSeguimiento || (envio.id ? envio.id.substring(0, 8) : "-")}</td>
+                  <td>
+                    <div style={{ fontSize: "0.85rem" }}>
+                      <div><strong>Origen:</strong> {envio.origen?.ciudad || "-"}</div>
+                      <div><strong>Destino:</strong> {envio.destino?.ciudad || "-"}</div>
                     </div>
-                    <div>
-                      <strong>Destino:</strong> {envio.destino?.ciudad || "-"}
-                    </div>
-                  </div>
-                </td>
-                <td style={{ textTransform: "capitalize" }}>{envio.tamanoPaquete || "-"}</td>
-                <td>
-                  <span className={`badge ${getBadgeClass(envio.estado)}`}>
-                    {formatearEstado(envio.estado)}
-                  </span>
-                </td>
-                <td>{formatearFecha(envio.fechaRetiro)}</td>
-                <td>{envio.horaRetiroAprox || "-"}</td>
-                <td>{envio.notas || "-"}</td>
-                <td>
-                  {envio.estado === "pendiente" && (
-                    <>
-                      {isEnvioEditable(envio.fechaRetiro) && (
-                        <button
-                          className="btn btn-sm btn-primary"
-                          style={{ fontSize: "0.75rem", padding: "0.25rem 0.5rem", marginRight: "0.25rem", width: "70px" }}
-                          onClick={() => {
-                            setSelectedEnvioId(envio.id);
-                            setEditModalOpen(true);
-                          }}
-                        >
-                          Editar
-                        </button>
-                      )}
-                      {isEnvioEditable(envio.fechaRetiro) && (
-                        <button
-                          className="btn btn-sm btn-danger"
-                          style={{ fontSize: "0.75rem", padding: "0.25rem 0.5rem", width: "70px" }}
-                          disabled={cancelingIds.has(envio.id)}
-                          title={cancelingIds.has(envio.id) ? "Cancelando..." : ""}
-                          onClick={() => handleCancelar(envio.id)}
-                        >
-                          {cancelingIds.has(envio.id) ? "..." : "Cancelar"}
-                        </button>
-                      )}
-                    </>
-                  )}
-                </td>
-              </tr>
-            ))}
+                  </td>
+                  <td style={{ textTransform: "capitalize" }}>{envio.tamanoPaquete || "-"}</td>
+                  <td>
+                    <span className={`badge ${getBadgeClass(envio.estado)}`}>
+                      {formatearEstado(envio.estado)}
+                    </span>
+                  </td>
+                  <td>{formatearFecha(envio.fechaRetiro)}</td>
+                  <td>{envio.horaRetiroAprox || "-"}</td>
+                  <td>{envio.notas || "-"}</td>
+                  <td>
+                    {envio.estado === "pendiente" && (
+                      <>
+                        {isEnvioEditable(envio.fechaRetiro) && (
+                          <Button
+                            type="button"
+                            variant="primary"
+                            size="sm"
+                            style={{
+                              fontSize: "0.75rem",
+                              padding: "0.25rem 0.5rem",
+                              marginRight: "0.25rem",
+                              width: "70px"
+                            }}
+                            onClick={() => {
+                              setSelectedEnvioId(envio.id);
+                              setEditModalOpen(true);
+                            }}
+                            value="Editar"
+                          />
+                        )}
+
+                        {isEnvioEditable(envio.fechaRetiro) && (
+                          <Button
+                            variant="danger"
+                            size="sm"
+                            disabled={cancelingIds.has(envio.id)}
+                            title={cancelingIds.has(envio.id) ? "Cancelando..." : ""}
+                            style={{
+                              fontSize: "0.75rem",
+                              padding: "0.25rem 0.5rem",
+                              width: "70px"
+                            }}
+                            onClick={() => handleCancelar(envio.id)}
+                            value={cancelingIds.has(envio.id) ? "..." : "Cancelar"}
+                          />
+                        )}
+                      </>
+                    )}
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
 
 

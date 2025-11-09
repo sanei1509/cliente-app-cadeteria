@@ -42,7 +42,7 @@ const KPIs = () => {
   };
 
   // Límite de envíos pendientes según plan
-  const maxPendientes = plan === "premium" ? null : 5;
+  const maxPendientes = plan === "premium" ? null : 10;
   const porcentajePendientes = maxPendientes
     ? Math.round((stats.pendientes / maxPendientes) * 100)
     : 0;

@@ -1,12 +1,6 @@
-/**
- * Componente Button dinámico y reutilizable
- *
- * @example
- * <Button variant="primary" size="md" onClick={handleClick}>Click me</Button>
- * <Button variant="danger" fullWidth disabled>Disabled</Button>
- * <Button variant="ghost" icon={<SaveIcon />}>Guardar</Button>
- */
 const Button = ({
+  value,              
+  loadingContent,       
   variant = 'primary',
   size = 'md',
   fullWidth = false,
@@ -14,27 +8,19 @@ const Button = ({
   loading = false,
   type = 'button',
   onClick,
-  children,
+  children,              // fallback para compatibilidad
   icon,
   iconPosition = 'left',
   className = '',
-  style = {}
+  style = {},
 }) => {
-  // Construir clases CSS
   const classes = ['btn'];
-
-  // Variantes: primary, secondary, outline, ghost, danger, upgrade
-  if (variant !== 'primary') classes.push(`btn-${variant}`);
-  else classes.push('btn-primary');
-
-  // Tamaños: sm, md (default)
+  if (variant !== 'primary') classes.push(`btn-${variant}`); else classes.push('btn-primary');
   if (size === 'sm') classes.push('btn-sm');
-
-  // Full width
   if (fullWidth) classes.push('btn-full');
-
-  // Clases adicionales
   if (className) classes.push(className);
+
+  const label = value ?? children; // si no pasás value, usa children
 
   return (
     <button
@@ -44,10 +30,16 @@ const Button = ({
       onClick={onClick}
       style={style}
     >
-      {loading && <span>Cargando...</span>}
-      {!loading && icon && iconPosition === 'left' && icon}
-      {!loading && children}
-      {!loading && icon && iconPosition === 'right' && icon}
+      {loading ? (
+        // Si hay loadingContent lo uso; si no, muestro label
+        loadingContent ?? label
+      ) : (
+        <>
+          {icon && iconPosition === 'left' && icon}
+          {label}
+          {icon && iconPosition === 'right' && icon}
+        </>
+      )}
     </button>
   );
 };
