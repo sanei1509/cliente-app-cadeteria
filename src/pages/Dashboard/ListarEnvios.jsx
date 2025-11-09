@@ -2,14 +2,18 @@ import EditarEnvioModal from "./EditarEnvioModal";
 import { API_CESAR } from "../../api/config";
 import { useState, useEffect, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { setEnvios, setEnviosLoading, updateEnvio } from "../../features/enviosSlice";
+import {
+  setEnvios,
+  setEnviosLoading,
+  updateEnvio,
+} from "../../features/enviosSlice";
 import { useNavigate } from "react-router-dom";
 import Filtros from "./Filtros";
 import { Spinner } from "../../components/Spinner";
-import { toast } from 'react-toastify';
+import { toast } from "react-toastify";
 import ConfirmModal from "../../components/ConfirmModal";
+import { reauth } from "../../utils/reauthUtils";
 import Button from "../../components/Button";
-
 
 const ListarEnvios = () => {
   // Estado para controlar el modal de edición
@@ -18,11 +22,11 @@ const ListarEnvios = () => {
   const [error, setError] = useState(null);
   const [cancelingIds, setCancelingIds] = useState(new Set());
   // Estados de filtros (cliente)
-  const [filtroFecha, setFiltroFecha] = useState('historico'); // 'historico' | 'semana' | 'mes'
-  const [filtroEstado, setFiltroEstado] = useState('todos');     // 'todos' | 'pendiente' | 'en_ruta' | 'entregado' | 'cancelado'
-  const [fechaEspecifica, setFechaEspecifica] = useState('');
-  const [fechaDesde, setFechaDesde] = useState('');
-  const [fechaHasta, setFechaHasta] = useState('');
+  const [filtroFecha, setFiltroFecha] = useState("historico"); // 'historico' | 'semana' | 'mes'
+  const [filtroEstado, setFiltroEstado] = useState("todos"); // 'todos' | 'pendiente' | 'en_ruta' | 'entregado' | 'cancelado'
+  const [fechaEspecifica, setFechaEspecifica] = useState("");
+  const [fechaDesde, setFechaDesde] = useState("");
+  const [fechaHasta, setFechaHasta] = useState("");
   // Estados para modal de confirmación
   const [confirmModalOpen, setConfirmModalOpen] = useState(false);
   const [pendingCancelId, setPendingCancelId] = useState(null);
@@ -39,14 +43,12 @@ const ListarEnvios = () => {
   }, [filtroFecha, filtroEstado, fechaEspecifica, fechaDesde, fechaHasta]);
 
   const limpiarFiltros = () => {
-    setFiltroFecha('historico');
-    setFiltroEstado('todos');
-    setFechaEspecifica('');
-    setFechaDesde('');
-    setFechaHasta('');
+    setFiltroFecha("historico");
+    setFiltroEstado("todos");
+    setFechaEspecifica("");
+    setFechaDesde("");
+    setFechaHasta("");
   };
-
-
 
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -56,9 +58,11 @@ const ListarEnvios = () => {
   const isLoading = useSelector((s) => s.envios.areEnviosLoading);
 
   const cargarEnvios = () => {
-
     const token = localStorage.getItem("token");
-    if (!token) { navigate("/login"); return; }
+    if (!token) {
+      navigate("/login");
+      return;
+    }
     dispatch(setEnviosLoading(true));
 
     const qs = buildQueryFromFilters({
@@ -71,8 +75,6 @@ const ListarEnvios = () => {
 
     const url = `${API_CESAR}/v1/envios${qs ? `?${qs}` : ""}`;
 
-
-    // 
     fetch(url, {
       method: "GET",
       headers: { authorization: `Bearer ${token}` },
@@ -84,13 +86,14 @@ const ListarEnvios = () => {
       })
       .then((data) => dispatch(setEnvios(data)))
       .catch((e) => {
-        if (e.message === "UNAUTHORIZED") { localStorage.clear(); navigate("/login"); }
-        else setError(e.message || "Error de conexión");
+        if (e.message === "UNAUTHORIZED") {
+          reauth(navigate);
+        } else {
+          setError(e.message || "Error de conexión");
+        }
       })
       .finally(() => dispatch(setEnviosLoading(false)));
   };
-
-
 
   // Función para formatear fecha
   const formatearFecha = (fecha) => {
@@ -98,7 +101,6 @@ const ListarEnvios = () => {
     const d = parseLocalDateOnly(fecha);
     return d.toLocaleDateString("es-UY");
   };
-
 
   // Función para obtener clase del badge según estado
   const getBadgeClass = (estado) => {
@@ -123,28 +125,33 @@ const ListarEnvios = () => {
   };
 
   // Funcion para armar las Query para los filtros
-  function buildQueryFromFilters({ filtroFecha, filtroEstado, fechaEspecifica, fechaDesde, fechaHasta }) {
+  function buildQueryFromFilters({
+    filtroFecha,
+    filtroEstado,
+    fechaEspecifica,
+    fechaDesde,
+    fechaHasta,
+  }) {
     const qs = new URLSearchParams();
 
     // Estado (si no es "todos")
-    if (filtroEstado && filtroEstado !== 'todos') {
-      qs.set('estado', filtroEstado);
+    if (filtroEstado && filtroEstado !== "todos") {
+      qs.set("estado", filtroEstado);
     }
 
     // Fechas (prioridad: específica > rango > ultimos)
     if (fechaEspecifica) {
-      qs.set('fecha', fechaEspecifica); // YYYY-MM-DD
+      qs.set("fecha", fechaEspecifica); // YYYY-MM-DD
     } else if (fechaDesde || fechaHasta) {
-      if (fechaDesde) qs.set('fechaDesde', fechaDesde); // YYYY-MM-DD
-      if (fechaHasta) qs.set('fechaHasta', fechaHasta); // YYYY-MM-DD
-    } else if (filtroFecha && filtroFecha !== 'historico') {
+      if (fechaDesde) qs.set("fechaDesde", fechaDesde); // YYYY-MM-DD
+      if (fechaHasta) qs.set("fechaHasta", fechaHasta); // YYYY-MM-DD
+    } else if (filtroFecha && filtroFecha !== "historico") {
       // 'semana' o 'mes'
-      qs.set('ultimos', filtroFecha);
+      qs.set("ultimos", filtroFecha);
     }
 
     return qs.toString();
   }
-
 
   const handleCancelar = (id) => {
     setPendingCancelId(id);
@@ -198,15 +205,21 @@ const ListarEnvios = () => {
       });
   };
 
-
   const sortedEnvios = useMemo(() => {
     // Prioridad de estados
-    const STATUS_RANK = { pendiente: 1, en_ruta: 2, entregado: 3, cancelado: 4 };
+    const STATUS_RANK = {
+      pendiente: 1,
+      en_ruta: 2,
+      entregado: 3,
+      cancelado: 4,
+    };
     const rank = (s) => STATUS_RANK[s] ?? 99;
 
     // Fecha segura para ordenar dentro del mismo estado (más futura arriba)
     const getTime = (e) => {
-      const d = parseLocalDateOnly(e.fechaRetiro || e.fecha || e.createdAt || 0);
+      const d = parseLocalDateOnly(
+        e.fechaRetiro || e.fecha || e.createdAt || 0
+      );
       const t = d?.getTime?.();
       return Number.isFinite(t) ? t : -Infinity;
     };
@@ -218,7 +231,6 @@ const ListarEnvios = () => {
       return getTime(b) - getTime(a);
     });
   }, [allEnvios]);
-
 
   return (
     <>
@@ -237,7 +249,16 @@ const ListarEnvios = () => {
       />
 
       {isLoading && (
-        <div style={{ padding: "2rem", textAlign: "center", display: "flex", justifyContent: "center", alignItems: "center", gap: "0.5rem" }}>
+        <div
+          style={{
+            padding: "2rem",
+            textAlign: "center",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            gap: "0.5rem",
+          }}
+        >
           <Spinner color={"text-primary"} size={"spinner-border-md"} />
           <span>Cargando envíos...</span>
         </div>
@@ -276,19 +297,97 @@ const ListarEnvios = () => {
             </tr>
           </thead>
           <tbody>
+            {sortedEnvios.map((envio) => (
+              <tr key={`row-${envio.id}`}>
+                <td>
+                  {envio.codigoSeguimiento ||
+                    (envio.id ? envio.id.substring(0, 8) : "-")}
+                </td>
+                <td>
+                  <div style={{ fontSize: "0.85rem" }}>
+                    <div>
+                      <strong>Origen:</strong> {envio.origen?.ciudad || "-"}
+                    </div>
+                    <div>
+                      <strong>Destino:</strong> {envio.destino?.ciudad || "-"}
+                    </div>
+                  </div>
+                </td>
+                <td style={{ textTransform: "capitalize" }}>
+                  {envio.tamanoPaquete || "-"}
+                </td>
+                <td>
+                  <span className={`badge ${getBadgeClass(envio.estado)}`}>
+                    {formatearEstado(envio.estado)}
+                  </span>
+                </td>
+                <td>{formatearFecha(envio.fechaRetiro)}</td>
+                <td>{envio.horaRetiroAprox || "-"}</td>
+                <td>{envio.notas || "-"}</td>
+                <td>
+                  {envio.estado === "pendiente" && (
+                    <>
+                      {isEnvioEditable(envio.fechaRetiro) && (
+                        <button
+                          className="btn btn-sm btn-primary"
+                          style={{
+                            fontSize: "0.75rem",
+                            padding: "0.25rem 0.5rem",
+                            marginRight: "0.25rem",
+                            width: "70px",
+                          }}
+                          onClick={() => {
+                            setSelectedEnvioId(envio.id);
+                            setEditModalOpen(true);
+                          }}
+                        >
+                          Editar
+                        </button>
+                      )}
+                      {isEnvioEditable(envio.fechaRetiro) && (
+                        <button
+                          className="btn btn-sm btn-danger"
+                          style={{
+                            fontSize: "0.75rem",
+                            padding: "0.25rem 0.5rem",
+                            width: "70px",
+                          }}
+                          disabled={cancelingIds.has(envio.id)}
+                          title={
+                            cancelingIds.has(envio.id) ? "Cancelando..." : ""
+                          }
+                          onClick={() => handleCancelar(envio.id)}
+                        >
+                          {cancelingIds.has(envio.id) ? "..." : "Cancelar"}
+                        </button>
+                      )}
+                    </>
+                  )}
+                </td>
+              </tr>
+            ))}
             {sortedEnvios.map((envio) => {
               const canceling = cancelingIds.has(envio.id);
 
               return (
                 <tr key={`row-${envio.id}`}>
-                  <td>{envio.codigoSeguimiento || (envio.id ? envio.id.substring(0, 8) : "-")}</td>
+                  <td>
+                    {envio.codigoSeguimiento ||
+                      (envio.id ? envio.id.substring(0, 8) : "-")}
+                  </td>
                   <td>
                     <div style={{ fontSize: "0.85rem" }}>
-                      <div><strong>Origen:</strong> {envio.origen?.ciudad || "-"}</div>
-                      <div><strong>Destino:</strong> {envio.destino?.ciudad || "-"}</div>
+                      <div>
+                        <strong>Origen:</strong> {envio.origen?.ciudad || "-"}
+                      </div>
+                      <div>
+                        <strong>Destino:</strong> {envio.destino?.ciudad || "-"}
+                      </div>
                     </div>
                   </td>
-                  <td style={{ textTransform: "capitalize" }}>{envio.tamanoPaquete || "-"}</td>
+                  <td style={{ textTransform: "capitalize" }}>
+                    {envio.tamanoPaquete || "-"}
+                  </td>
                   <td>
                     <span className={`badge ${getBadgeClass(envio.estado)}`}>
                       {formatearEstado(envio.estado)}
@@ -309,7 +408,7 @@ const ListarEnvios = () => {
                               fontSize: "0.75rem",
                               padding: "0.25rem 0.5rem",
                               marginRight: "0.25rem",
-                              width: "70px"
+                              width: "70px",
                             }}
                             onClick={() => {
                               setSelectedEnvioId(envio.id);
@@ -324,14 +423,18 @@ const ListarEnvios = () => {
                             variant="danger"
                             size="sm"
                             disabled={cancelingIds.has(envio.id)}
-                            title={cancelingIds.has(envio.id) ? "Cancelando..." : ""}
+                            title={
+                              cancelingIds.has(envio.id) ? "Cancelando..." : ""
+                            }
                             style={{
                               fontSize: "0.75rem",
                               padding: "0.25rem 0.5rem",
-                              width: "70px"
+                              width: "70px",
                             }}
                             onClick={() => handleCancelar(envio.id)}
-                            value={cancelingIds.has(envio.id) ? "..." : "Cancelar"}
+                            value={
+                              cancelingIds.has(envio.id) ? "..." : "Cancelar"
+                            }
                           />
                         )}
                       </>
@@ -341,8 +444,6 @@ const ListarEnvios = () => {
               );
             })}
           </tbody>
-
-
         </table>
       )}
 
@@ -399,7 +500,6 @@ function parseLocalDateOnly(value) {
   // Si ya es Date u otro formato, cae al parse normal
   return new Date(value);
 }
-
 
 function isEnvioEditable(fechaEnvio) {
   if (!fechaEnvio) return false;

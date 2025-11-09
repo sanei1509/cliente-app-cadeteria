@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
-import { updateUserPlan, clearUser } from "../features/userSlice";
+import { updateUserPlan } from "../features/userSlice";
 import { API_CESAR } from "../api/config";
 import "./UpgradePlanModal.css";
 import { toast } from 'react-toastify';
+import { reauth } from "../utils/reauthUtils";
 
 const CancelPlanModal = ({ isOpen, onClose }) => {
   const [isLoading, setIsLoading] = useState(false);
@@ -44,10 +45,7 @@ const CancelPlanModal = ({ isOpen, onClose }) => {
       })
       .catch((e) => {
         if (e.message === "UNAUTHORIZED") {
-          // Limpiar usuario de Redux (automáticamente limpia localStorage)
-          dispatch(clearUser());
-          toast.error("Sesión expirada. Por favor, inicia sesión nuevamente.");
-          navigate("/login");
+          reauth(navigate);
         } else {
           setError(e.message);
           toast.error(e.message || "Error al cancelar el plan");
@@ -73,15 +71,9 @@ const CancelPlanModal = ({ isOpen, onClose }) => {
             ¿Estás seguro que deseas cancelar tu plan Premium y volver al{" "}
             <strong>Plan Plus</strong>?
           </p>
-          <div className="plan-comparison" style={{ marginTop: "1rem" }}>
-            <div className="plan-feature">
-              <span className="feature-icon">⚠️</span>
-              <span>Volverás a tener un máximo de 10 envíos pendientes</span>
-            </div>
-            <div className="plan-feature">
-              <span className="feature-icon">⚠️</span>
-              <span>Perderás el acceso a funciones premium</span>
-            </div>
+          <div style={{ marginTop: "1rem", padding: "1rem", backgroundColor: "#f0f9ff", borderRadius: "8px" }}>
+            <div style={{ marginBottom: "0.5rem" }}>• Volverás a tener un máximo de 10 envíos pendientes</div>
+            <div>• Perderás el acceso a funciones premium</div>
           </div>
 
           {error && <div className="error-message">{error}</div>}

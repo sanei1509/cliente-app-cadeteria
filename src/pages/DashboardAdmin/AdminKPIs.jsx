@@ -1,5 +1,6 @@
 import { useSelector } from 'react-redux';
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { API_CESAR } from '../../api/config';
 import {
   PackageIcon,
@@ -8,11 +9,13 @@ import {
   ClockIcon,
 } from "../../components/icons";
 import { Spinner } from "../../components/Spinner";
+import { reauth } from "../../utils/reauthUtils";
 
 const AdminKPIs = () => {
   const allEnvios = useSelector((state) => state.envios.allEnvios);
   const isLoading = useSelector((state) => state.envios.areEnviosLoading);
   const [totalUsuarios, setTotalUsuarios] = useState(0);
+  const navigate = useNavigate();
 
   // Cargar total de usuarios
   useEffect(() => {
@@ -22,10 +25,20 @@ const AdminKPIs = () => {
     fetch(`${API_CESAR}/v1/users`, {
       headers: { Authorization: `Bearer ${token}` }
     })
-      .then(res => res.ok ? res.json() : [])
+      .then(res => {
+        if (res.ok) return res.json();
+        if (res.status === 401) throw new Error("UNAUTHORIZED");
+        return [];
+      })
       .then(data => setTotalUsuarios(Array.isArray(data) ? data.length : 0))
-      .catch(() => setTotalUsuarios(0));
-  }, []);
+      .catch((error) => {
+        if (error.message === "UNAUTHORIZED") {
+          reauth(navigate);
+        } else {
+          setTotalUsuarios(0);
+        }
+      });
+  }, [navigate]);
 
   // Calcular estadísticas desde TODOS los envíos (sin filtros)
   const totalEnvios = Array.isArray(allEnvios) ? allEnvios.length : 0;

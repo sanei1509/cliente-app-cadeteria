@@ -1,11 +1,13 @@
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
+import { useNavigate } from "react-router-dom";
 import Modal from "./Modal";
 import { API_CESAR } from "../../api/config";
 import { useDispatch } from "react-redux";
 import { updateEnvio } from "../../features/enviosSlice";
 import { toast } from "react-toastify";
 import { Spinner } from "../../components/Spinner";
+import { reauth } from "../../utils/reauthUtils";
 
 /**
  * Modal para editar un envío existente
@@ -19,6 +21,7 @@ import { Spinner } from "../../components/Spinner";
 
 const EditarEnvioModal = ({ isOpen, onClose, envioId, onSuccess }) => {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
 
   const {
     register,
@@ -61,6 +64,7 @@ const EditarEnvioModal = ({ isOpen, onClose, envioId, onSuccess }) => {
     })
       .then((response) => {
         if (!response.ok) {
+          if (response.status === 401) throw new Error("UNAUTHORIZED");
           throw new Error("Error al cargar los datos del envío");
         }
         return response.json();
@@ -93,8 +97,12 @@ const EditarEnvioModal = ({ isOpen, onClose, envioId, onSuccess }) => {
         });
       })
       .catch((error) => {
-        toast.error(error.message || "Error de conexión al cargar el envío");
-        onClose();
+        if (error.message === "UNAUTHORIZED") {
+          reauth(navigate);
+        } else {
+          toast.error(error.message || "Error de conexión al cargar el envío");
+          onClose();
+        }
       })
       .finally(() => {
         setIsLoading(false);
@@ -167,6 +175,7 @@ const EditarEnvioModal = ({ isOpen, onClose, envioId, onSuccess }) => {
     })
       .then((response) => {
         if (!response.ok) {
+          if (response.status === 401) throw new Error("UNAUTHORIZED");
           return response
             .json()
             .catch(() => ({}))
@@ -193,9 +202,13 @@ const EditarEnvioModal = ({ isOpen, onClose, envioId, onSuccess }) => {
         if (onSuccess) onSuccess();
       })
       .catch((error) => {
-        toast.error(
-          error.message || "Error de conexión. Por favor, intenta nuevamente."
-        );
+        if (error.message === "UNAUTHORIZED") {
+          reauth(navigate);
+        } else {
+          toast.error(
+            error.message || "Error de conexión. Por favor, intenta nuevamente."
+          );
+        }
       })
       .finally(() => {
         setIsSubmitting(false);

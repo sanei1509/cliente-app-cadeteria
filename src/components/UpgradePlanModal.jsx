@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
-import { updateUserPlan, clearUser } from "../features/userSlice";
+import { updateUserPlan } from "../features/userSlice";
 import { API_CESAR } from "../api/config";
 import "./UpgradePlanModal.css";
 import { toast } from 'react-toastify';
+import { reauth } from "../utils/reauthUtils";
 
 const UpgradePlanModal = ({ isOpen, onClose, onUpgradeSuccess }) => {
   const [isLoading, setIsLoading] = useState(false);
@@ -51,10 +52,7 @@ const UpgradePlanModal = ({ isOpen, onClose, onUpgradeSuccess }) => {
       })
       .catch((e) => {
         if (e.message === "UNAUTHORIZED") {
-          // Limpiar usuario de Redux (automáticamente limpia localStorage)
-          dispatch(clearUser());
-          toast.error("Sesión expirada. Por favor, inicia sesión nuevamente.");
-          navigate("/login");
+          reauth(navigate);
         } else {
           setError(e.message);
           toast.error(e.message || "Error al actualizar el plan");

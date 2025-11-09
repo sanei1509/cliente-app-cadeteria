@@ -1,10 +1,12 @@
 import { useState } from "react";
 import { useDispatch } from "react-redux";
+import { useNavigate } from "react-router-dom";
 import { updateEnvio, deleteEnvio } from "../../features/enviosSlice";
 import { API_CESAR } from "../../api/config";
 import { ClipLoader } from "react-spinners";
 import { toast } from 'react-toastify';
 import ConfirmModal from "../../components/ConfirmModal";
+import { reauth } from "../../utils/reauthUtils";
 
 function getUserIdFromEnvio(envio) {
   if (!envio) return "";
@@ -21,6 +23,7 @@ const AdminTablaEnvio = ({ envio }) => {
   const [confirmModalData, setConfirmModalData] = useState({});
   const [pendingEstadoChange, setPendingEstadoChange] = useState(null);
   const dispatch = useDispatch();
+  const navigate = useNavigate();
 
   const getBadgeClass = (estado) => {
     const estados = {
@@ -92,6 +95,7 @@ const formatearFecha = (fecha) => {
     })
       .then((response) => {
         if (!response.ok) {
+          if (response.status === 401) throw new Error("UNAUTHORIZED");
           return response
             .json()
             .then((err) => {
@@ -110,8 +114,12 @@ const formatearFecha = (fecha) => {
         toast.success(`Estado cambiado a "${formatearEstado(data.estado)}" exitosamente`);
       })
       .catch((error) => {
-        console.error("Error al cambiar estado:", error);
-        if (selectElement) selectElement.value = envio.estado; // Restaurar valor en caso de error
+        if (error.message === "UNAUTHORIZED") {
+          reauth(navigate);
+        } else {
+          console.error("Error al cambiar estado:", error);
+          if (selectElement) selectElement.value = envio.estado; // Restaurar valor en caso de error
+        }
       })
       .finally(() => {
         setIsUpdating(false);
@@ -143,6 +151,7 @@ const formatearFecha = (fecha) => {
     })
       .then((response) => {
         if (!response.ok) {
+          if (response.status === 401) throw new Error("UNAUTHORIZED");
           return response
             .json()
             .then((err) => {
@@ -159,7 +168,11 @@ const formatearFecha = (fecha) => {
         toast.success("Envío eliminado exitosamente");
       })
       .catch((error) => {
-        console.error("Error al eliminar envío:", error);
+        if (error.message === "UNAUTHORIZED") {
+          reauth(navigate);
+        } else {
+          console.error("Error al eliminar envío:", error);
+        }
       })
       .finally(() => {
         setIsUpdating(false);

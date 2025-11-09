@@ -6,6 +6,7 @@ import { API_CESAR } from '../../api/config';
 import AdminFiltros from './AdminFiltros';
 import AdminTablaEnvio from './AdminTablaEnvio';
 import { Spinner } from "../../components/Spinner";
+import { reauth } from '../../utils/reauthUtils';
 
 function getUserIdFromEnvio(envio) {
   if (!envio) return "";
@@ -93,8 +94,7 @@ const AdminListaEnvios = () => {
       })
       .catch((e) => {
         if (e.message === "UNAUTHORIZED") {
-          localStorage.clear();
-          navigate("/login");
+          reauth(navigate);
         } else {
           setError(e.message || "Error de conexión");
         }
