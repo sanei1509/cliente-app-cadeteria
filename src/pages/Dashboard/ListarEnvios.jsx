@@ -299,78 +299,6 @@ const ListarEnvios = () => {
           <tbody>
             {sortedEnvios.map((envio) => (
               <tr key={`row-${envio.id}`}>
-                <td>
-                  {envio.codigoSeguimiento ||
-                    (envio.id ? envio.id.substring(0, 8) : "-")}
-                </td>
-                <td>
-                  <div style={{ fontSize: "0.85rem" }}>
-                    <div>
-                      <strong>Origen:</strong> {envio.origen?.ciudad || "-"}
-                    </div>
-                    <div>
-                      <strong>Destino:</strong> {envio.destino?.ciudad || "-"}
-                    </div>
-                  </div>
-                </td>
-                <td style={{ textTransform: "capitalize" }}>
-                  {envio.tamanoPaquete || "-"}
-                </td>
-                <td>
-                  <span className={`badge ${getBadgeClass(envio.estado)}`}>
-                    {formatearEstado(envio.estado)}
-                  </span>
-                </td>
-                <td>{formatearFecha(envio.fechaRetiro)}</td>
-                <td>{envio.horaRetiroAprox || "-"}</td>
-                <td>{envio.notas || "-"}</td>
-                <td>
-                  {envio.estado === "pendiente" && (
-                    <>
-                      {isEnvioEditable(envio.fechaRetiro) && (
-                        <button
-                          className="btn btn-sm btn-primary"
-                          style={{
-                            fontSize: "0.75rem",
-                            padding: "0.25rem 0.5rem",
-                            marginRight: "0.25rem",
-                            width: "70px",
-                          }}
-                          onClick={() => {
-                            setSelectedEnvioId(envio.id);
-                            setEditModalOpen(true);
-                          }}
-                        >
-                          Editar
-                        </button>
-                      )}
-                      {isEnvioEditable(envio.fechaRetiro) && (
-                        <button
-                          className="btn btn-sm btn-danger"
-                          style={{
-                            fontSize: "0.75rem",
-                            padding: "0.25rem 0.5rem",
-                            width: "70px",
-                          }}
-                          disabled={cancelingIds.has(envio.id)}
-                          title={
-                            cancelingIds.has(envio.id) ? "Cancelando..." : ""
-                          }
-                          onClick={() => handleCancelar(envio.id)}
-                        >
-                          {cancelingIds.has(envio.id) ? "..." : "Cancelar"}
-                        </button>
-                      )}
-                    </>
-                  )}
-                </td>
-              </tr>
-            ))}
-            {sortedEnvios.map((envio) => {
-              const canceling = cancelingIds.has(envio.id);
-
-              return (
-                <tr key={`row-${envio.id}`}>
                   <td>
                     {envio.codigoSeguimiento ||
                       (envio.id ? envio.id.substring(0, 8) : "-")}
@@ -423,6 +351,7 @@ const ListarEnvios = () => {
                             variant="danger"
                             size="sm"
                             disabled={cancelingIds.has(envio.id)}
+                            loading={cancelingIds.has(envio.id)}
                             title={
                               cancelingIds.has(envio.id) ? "Cancelando..." : ""
                             }
@@ -432,8 +361,9 @@ const ListarEnvios = () => {
                               width: "70px",
                             }}
                             onClick={() => handleCancelar(envio.id)}
-                            value={
-                              cancelingIds.has(envio.id) ? "..." : "Cancelar"
+                            value="Cancelar"
+                            loadingContent={
+                              <Spinner color={"text-light"} size={"spinner-border-sm"} />
                             }
                           />
                         )}
@@ -441,8 +371,7 @@ const ListarEnvios = () => {
                     )}
                   </td>
                 </tr>
-              );
-            })}
+            ))}
           </tbody>
         </table>
       )}
@@ -479,13 +408,6 @@ function startOfLocalDay(d) {
   const x = new Date(d);
   x.setHours(0, 0, 0, 0);
   return x;
-}
-
-// Helper function to normalize any date to start of day (midnight)
-function startOfDay(date) {
-  const d = new Date(date);
-  d.setHours(0, 0, 0, 0);
-  return d;
 }
 
 function parseLocalDateOnly(value) {

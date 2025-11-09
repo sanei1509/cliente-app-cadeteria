@@ -3,10 +3,10 @@ import { useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { updateEnvio, deleteEnvio } from "../../features/enviosSlice";
 import { API_CESAR } from "../../api/config";
-import { ClipLoader } from "react-spinners";
 import { toast } from 'react-toastify';
 import ConfirmModal from "../../components/ConfirmModal";
 import { reauth } from "../../utils/reauthUtils";
+import { Spinner } from "../../components/Spinner";
 
 function getUserIdFromEnvio(envio) {
   if (!envio) return "";
@@ -307,7 +307,7 @@ const formatearFecha = (fecha) => {
             title={isUpdating ? "Eliminando..." : "Eliminar envío"}
           >
             {isUpdating ? (
-              <ClipLoader size={16} color="#ffffffff" />
+              <Spinner color={"text-light"} size={"spinner-border-sm"} />
             ) : (
               // Ícono de papelera
               <svg

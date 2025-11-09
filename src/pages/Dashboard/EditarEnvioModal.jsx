@@ -223,7 +223,8 @@ const EditarEnvioModal = ({ isOpen, onClose, envioId, onSuccess }) => {
       </div>
 
       {isLoading ? (
-        <div style={{ padding: "2rem", textAlign: "center" }}>
+        <div style={{ padding: "2rem", textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center", gap: "1rem" }}>
+          <Spinner color={"text-primary"} size={"spinner-border-md"} />
           <p>Cargando datos del envío...</p>
         </div>
       ) : (
