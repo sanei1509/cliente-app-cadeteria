@@ -7,6 +7,7 @@ import AdminFiltros from './AdminFiltros';
 import AdminTablaEnvio from './AdminTablaEnvio';
 import { Spinner } from "../../components/Spinner";
 import { reauth } from '../../utils/reauthUtils';
+import ComprobanteModal from '../../components/ComprobanteModal';
 
 function getUserIdFromEnvio(envio) {
   if (!envio) return "";
@@ -27,6 +28,10 @@ const AdminListaEnvios = () => {
   const [fechaEspecifica, setFechaEspecifica] = useState('');
   const [fechaDesde, setFechaDesde] = useState('');
   const [fechaHasta, setFechaHasta] = useState('');
+
+  // Estados para modal de comprobante
+  const [comprobanteModalOpen, setComprobanteModalOpen] = useState(false);
+  const [selectedComprobanteUrl, setSelectedComprobanteUrl] = useState('');
 
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -169,12 +174,17 @@ function buildQueryFromFilters({ filtroFecha, filtroEstado, filtroTamano, fechaE
   const getDate = (e) => parseLocalDateOnly(e.fechaRetiro || e.fecha || e.fechaCreacion || e.createdAt || 0);
   const sortedEnvios = enviosFiltrados.slice().sort((a, b) => getDate(b) - getDate(a));
 
-  
+
   function formatearFecha(fecha) {
     if (!fecha) return "-";
     const d = parseLocalDateOnly(fecha);
     return isNaN(d) ? "-" : d.toLocaleDateString("es-UY");
   }
+
+  const handleVerComprobante = (url) => {
+    setSelectedComprobanteUrl(url);
+    setComprobanteModalOpen(true);
+  };
 
 
   return (
@@ -228,27 +238,41 @@ function buildQueryFromFilters({ filtroFecha, filtroEstado, filtroTamano, fechaE
           <table className="table">
             <thead>
               <tr>
-                <th>Código seguimiento</th>
-                <th>Usuario</th>
+                <th style={{ textAlign: "center" }}>Código seguimiento</th>
+                <th style={{ textAlign: "center" }}>Usuario</th>
                 <th>Cliente</th>
                 <th>Origen / Destino</th>
-                <th>Categoría</th>
-                <th>Tamaño</th>
-                <th>Estado</th>
-                <th>Fecha de retiro</th>
-                <th>Hora aproximada</th>
+                <th style={{ textAlign: "center" }}>Categoría</th>
+                <th style={{ textAlign: "center" }}>Tamaño</th>
+                <th style={{ textAlign: "center" }}>Estado</th>
+                <th style={{ textAlign: "center" }}>Fecha de retiro</th>
+                <th style={{ textAlign: "center" }}>Hora aproximada</th>
                 <th>Notas</th>
-                <th>Acciones</th>
+                <th style={{ textAlign: "center" }}>Comprobante</th>
+                <th style={{ textAlign: "center" }}>Acciones</th>
               </tr>
             </thead>
             <tbody>
               {sortedEnvios.map((envio) => (
-                <AdminTablaEnvio key={envio.id} envio={envio} />
+                <AdminTablaEnvio
+                  key={envio.id}
+                  envio={envio}
+                  onVerComprobante={handleVerComprobante}
+                />
               ))}
             </tbody>
           </table>
         </div>
       )}
+
+      <ComprobanteModal
+        isOpen={comprobanteModalOpen}
+        onClose={() => {
+          setComprobanteModalOpen(false);
+          setSelectedComprobanteUrl('');
+        }}
+        imageUrl={selectedComprobanteUrl}
+      />
     </section>
   );
 };

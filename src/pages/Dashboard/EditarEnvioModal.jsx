@@ -34,8 +34,30 @@ const EditarEnvioModal = ({ isOpen, onClose, envioId, onSuccess }) => {
   const [categories, setCategories] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [comprobanteFile, setComprobanteFile] = useState(null);
+  const [uploadingComprobante, setUploadingComprobante] = useState(false);
+  const [currentComprobanteUrl, setCurrentComprobanteUrl] = useState("");
 
   const notasValue = watch("notas", "");
+
+  const handleComprobanteUpload = (evt) => {
+    const selectedFile = evt.target.files[0];
+    if (selectedFile) {
+      // Validar tamaño (max 5MB)
+      if (selectedFile.size > 5 * 1024 * 1024) {
+        toast.error("La imagen no debe superar los 5MB");
+        evt.target.value = null;
+        return;
+      }
+      // Validar tipo
+      if (!selectedFile.type.startsWith('image/')) {
+        toast.error("Solo se permiten archivos de imagen");
+        evt.target.value = null;
+        return;
+      }
+      setComprobanteFile(selectedFile);
+    }
+  };
 
   // Cargar categorías al montar
   useEffect(() => {
@@ -79,6 +101,13 @@ const EditarEnvioModal = ({ isOpen, onClose, envioId, onSuccess }) => {
               : data.category;
         }
 
+        // Guardar la URL del comprobante actual si existe
+        if (data.comprobantePagoUrl) {
+          setCurrentComprobanteUrl(data.comprobantePagoUrl);
+        } else {
+          setCurrentComprobanteUrl("");
+        }
+
         // Usar reset() para cargar los datos en el formulario
         reset({
           origenCalle: data.origen?.calle || "",
@@ -109,10 +138,49 @@ const EditarEnvioModal = ({ isOpen, onClose, envioId, onSuccess }) => {
       });
   };
 
-  const onSubmit = (formData) => {
+  const onSubmit = async (formData) => {
     setIsSubmitting(true);
 
     const token = localStorage.getItem("token");
+
+    let comprobanteUrl = currentComprobanteUrl; // Mantener el existente por defecto
+
+    // Subir nuevo comprobante a Cloudinary si existe
+    if (comprobanteFile) {
+      const data = new FormData();
+      data.append("upload_preset", "Cadeteria");
+      data.append("file", comprobanteFile);
+
+      const cloudinaryURL = "https://api.cloudinary.com/v1_1/dvu1wtvuq/image/upload";
+
+      try {
+        setUploadingComprobante(true);
+        toast.info("Subiendo comprobante...");
+        const response = await fetch(cloudinaryURL, {
+          method: "POST",
+          body: data,
+        });
+
+        if (response.ok) {
+          const cloudData = await response.json();
+          comprobanteUrl = cloudData.secure_url || cloudData.url;
+          console.log("Comprobante subido a Cloudinary:", comprobanteUrl);
+        } else {
+          toast.error("Error al subir el comprobante");
+          setIsSubmitting(false);
+          setUploadingComprobante(false);
+          return;
+        }
+      } catch (error) {
+        console.error("Error al subir comprobante:", error);
+        toast.error("Error al subir el comprobante");
+        setIsSubmitting(false);
+        setUploadingComprobante(false);
+        return;
+      } finally {
+        setUploadingComprobante(false);
+      }
+    }
 
     // Solo incluir campos que tengan valor
     const payload = {};
@@ -163,6 +231,11 @@ const EditarEnvioModal = ({ isOpen, onClose, envioId, onSuccess }) => {
     // Categoría
     if (formData.categoryId) {
       payload.categoryId = formData.categoryId;
+    }
+
+    // Comprobante de pago
+    if (comprobanteUrl) {
+      payload.comprobantePagoUrl = comprobanteUrl;
     }
 
     fetch(`${API_CESAR}/v1/envios/${envioId}`, {
@@ -575,6 +648,34 @@ const EditarEnvioModal = ({ isOpen, onClose, envioId, onSuccess }) => {
                     {errors.notas.message}
                   </div>
                 )}
+              </div>
+
+              {/* Comprobante de pago */}
+              <div className="form-group" style={{ gridColumn: "1 / -1" }}>
+                <label htmlFor="comprobanteFile" className="form-label">
+                  Comprobante de pago (opcional)
+                  {comprobanteFile && (
+                    <span style={{ marginLeft: '0.5rem', color: 'var(--success-color)', fontSize: '0.85rem' }}>
+                      ✓ {comprobanteFile.name}
+                    </span>
+                  )}
+                </label>
+                {currentComprobanteUrl && !comprobanteFile && (
+                  <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>
+                    Ya existe un comprobante. Subí uno nuevo para reemplazarlo.
+                  </div>
+                )}
+                <input
+                  type="file"
+                  id="comprobanteFile"
+                  className="form-input"
+                  accept="image/*"
+                  onChange={handleComprobanteUpload}
+                  disabled={isSubmitting || uploadingComprobante}
+                />
+                <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                  Máximo 5MB - JPG, PNG, GIF
+                </span>
               </div>
             </div>
           </div>

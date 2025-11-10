@@ -16,7 +16,7 @@ function getUserIdFromEnvio(envio) {
   return envio.userId || "";
 }
 
-const AdminTablaEnvio = ({ envio }) => {
+const AdminTablaEnvio = ({ envio, onVerComprobante }) => {
   const [isUpdating, setIsUpdating] = useState(false);
   const [copied, setCopied] = useState(false);
   const [confirmModalOpen, setConfirmModalOpen] = useState(false);
@@ -196,11 +196,11 @@ const formatearFecha = (fecha) => {
   return (
     <>
     <tr>
-      <td>{envio.codigoSeguimiento || envio.id?.substring(0, 8) || "-"}</td>
+      <td style={{ textAlign: "center" }}>{envio.codigoSeguimiento || envio.id?.substring(0, 8) || "-"}</td>
 
       {/* Usuario: ID + icono a la derecha */}
-      <td title={userId || "-"}>
-        <div className="user-inline">
+      <td title={userId || "-"} style={{ textAlign: "center" }}>
+        <div className="user-inline" style={{ justifyContent: "center" }}>
           <span className="user-code">{shortUserId}</span>
           {userId && (
             <button
@@ -244,7 +244,7 @@ const formatearFecha = (fecha) => {
         </div>
       </td>
 
-      <td>
+      <td style={{ textAlign: "center" }}>
         {envio.categoria?.nombre ||
           envio.categoria ||
           envio.category?.name ||
@@ -252,18 +252,18 @@ const formatearFecha = (fecha) => {
           "-"}
       </td>
 
-      <td style={{ textTransform: "capitalize" }}>
+      <td style={{ textTransform: "capitalize", textAlign: "center" }}>
         {envio.tamanoPaquete || "-"}
       </td>
 
-      <td>
+      <td style={{ textAlign: "center" }}>
         <span className={`badge ${getBadgeClass(envio.estado)}`}>
           {formatearEstado(envio.estado)}
         </span>
       </td>
 
-      <td>{formatearFecha(envio.fechaRetiro)}</td>
-      <td>{envio.horaRetiroAprox || "-"}</td>
+      <td style={{ textAlign: "center" }}>{formatearFecha(envio.fechaRetiro)}</td>
+      <td style={{ textAlign: "center" }}>{envio.horaRetiroAprox || "-"}</td>
 
       <td className="col-notas">
         <span className="note-tooltip" data-tip={envio.notas || ""}>
@@ -271,8 +271,32 @@ const formatearFecha = (fecha) => {
         </span>
       </td>
 
-      <td>
-        <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
+      <td style={{ textAlign: "center" }}>
+        {envio.comprobantePagoUrl ? (
+          <button
+            type="button"
+            className="btn-link"
+            style={{
+              color: "var(--primary-color)",
+              textDecoration: "underline",
+              cursor: "pointer",
+              border: "none",
+              background: "none",
+              fontSize: "0.85rem",
+            }}
+            onClick={() => onVerComprobante(envio.comprobantePagoUrl)}
+          >
+            Ver comprobante
+          </button>
+        ) : (
+          <span style={{ color: "var(--text-secondary)", fontSize: "0.85rem" }}>
+            -
+          </span>
+        )}
+      </td>
+
+      <td style={{ textAlign: "center" }}>
+        <div style={{ display: "flex", gap: "0.5rem", alignItems: "center", justifyContent: "center" }}>
           {/* Selector de estado */}
           <select
             className="form-input"

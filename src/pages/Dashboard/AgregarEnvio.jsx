@@ -27,12 +27,33 @@ const AgregarEnvio = () => {
   const [catLoading, setCatLoading] = useState(true);
   const [catError, setCatError] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [comprobanteFile, setComprobanteFile] = useState(null);
+  const [uploadingComprobante, setUploadingComprobante] = useState(false);
 
   // Obtener usuario y envíos desde Redux
   const user = useSelector((state) => state.user.user);
   const envios = useSelector((state) => state.envios.envios);
 
   const notasValue = watch("notas", "");
+
+  const handleComprobanteUpload = (evt) => {
+    const selectedFile = evt.target.files[0];
+    if (selectedFile) {
+      // Validar tamaño (max 5MB)
+      if (selectedFile.size > 5 * 1024 * 1024) {
+        toast.error("La imagen no debe superar los 5MB");
+        evt.target.value = null;
+        return;
+      }
+      // Validar tipo
+      if (!selectedFile.type.startsWith('image/')) {
+        toast.error("Solo se permiten archivos de imagen");
+        evt.target.value = null;
+        return;
+      }
+      setComprobanteFile(selectedFile);
+    }
+  };
 
   useEffect(() => {
     const fetchCategorias = async () => {
@@ -52,7 +73,7 @@ const AgregarEnvio = () => {
     fetchCategorias();
   }, []);
 
-  const onSubmit = (formData) => {
+  const onSubmit = async (formData) => {
     setIsSubmitting(true);
 
     const token = localStorage.getItem("token");
@@ -70,6 +91,45 @@ const AgregarEnvio = () => {
       toast.error("Seleccioná una categoría válida.");
       setIsSubmitting(false);
       return;
+    }
+
+    let comprobanteUrl;
+
+    // Subir comprobante a Cloudinary si existe
+    if (comprobanteFile) {
+      const data = new FormData();
+      data.append("upload_preset", "Cadeteria");
+      data.append("file", comprobanteFile);
+
+      const cloudinaryURL = "https://api.cloudinary.com/v1_1/dvu1wtvuq/image/upload";
+
+      try {
+        setUploadingComprobante(true);
+        toast.info("Subiendo comprobante...");
+        const response = await fetch(cloudinaryURL, {
+          method: "POST",
+          body: data,
+        });
+
+        if (response.ok) {
+          const cloudData = await response.json();
+          comprobanteUrl = cloudData.secure_url || cloudData.url;
+          console.log("Comprobante subido a Cloudinary:", comprobanteUrl);
+        } else {
+          toast.error("Error al subir el comprobante");
+          setIsSubmitting(false);
+          setUploadingComprobante(false);
+          return;
+        }
+      } catch (error) {
+        console.error("Error al subir comprobante:", error);
+        toast.error("Error al subir el comprobante");
+        setIsSubmitting(false);
+        setUploadingComprobante(false);
+        return;
+      } finally {
+        setUploadingComprobante(false);
+      }
     }
 
     const payload = {
@@ -98,6 +158,10 @@ const AgregarEnvio = () => {
       payload.categoria.descripcion = formData.categoriaDescripcion;
     }
 
+    if (comprobanteUrl) {
+      payload.comprobantePagoUrl = comprobanteUrl;
+    }
+
     fetch(`${API_CESAR}/v1/envios`, {
       method: "POST",
       headers: {
@@ -123,6 +187,7 @@ const AgregarEnvio = () => {
       .then((nuevoEnvio) => {
         dispatch(addEnvio(nuevoEnvio));
         reset();
+        setComprobanteFile(null);
         setIsModalOpen(false);
         toast.success("Envío registrado exitosamente");
       })
@@ -622,12 +687,36 @@ const AgregarEnvio = () => {
             )}
           </div>
 
+          {/* Comprobante de pago (opcional) */}
+          <div className="form-group">
+            <label htmlFor="comprobanteFile" className="form-label">
+              Comprobante de pago (opcional)
+              {comprobanteFile && (
+                <span style={{ marginLeft: '0.5rem', color: 'var(--success-color)', fontSize: '0.85rem' }}>
+                  ✓ {comprobanteFile.name}
+                </span>
+              )}
+            </label>
+            <input
+              type="file"
+              id="comprobanteFile"
+              className="form-input"
+              accept="image/*"
+              onChange={handleComprobanteUpload}
+              disabled={isSubmitting || uploadingComprobante}
+            />
+            <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+              Máximo 5MB - JPG, PNG, GIF
+            </span>
+          </div>
+
           <div style={{ display: "flex", gap: "0.5rem", marginTop: "1.5rem" }}>
             <button
               type="button"
               className="btn btn-ghost btn-full"
               onClick={() => {
                 reset();
+                setComprobanteFile(null);
                 setIsModalOpen(false);
               }}
               disabled={isSubmitting}
