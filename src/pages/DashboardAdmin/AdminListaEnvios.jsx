@@ -42,13 +42,13 @@ const AdminListaEnvios = () => {
   // Cargar envíos cuando se monta el componente
   useEffect(() => {
     cargarEnvios();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    
   }, []);
 
   // Recargar cuando cambian los filtros de fecha/estado/tamaño (backend)
   useEffect(() => {
     cargarEnvios();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    
   }, [filtroFecha, filtroEstado, filtroTamano, fechaEspecifica, fechaDesde, fechaHasta]);
 
   const limpiarFiltros = () => {
@@ -138,7 +138,7 @@ function buildQueryFromFilters({ filtroFecha, filtroEstado, filtroTamano, fechaE
 
 
 
-  // Filtrar por usuario SOLO del lado del cliente (no lo soporta el backend)
+  // Filtrar por usuario SOLO del lado del cliente
   const enviosFiltrados = allEnvios.filter((e) => {
     // Filtro por usuario (ID o nombre)
     const needle = (filtroUsuarioId || "").trim().toLowerCase();
@@ -170,16 +170,9 @@ function buildQueryFromFilters({ filtroFecha, filtroEstado, filtroTamano, fechaE
   });
 
   // Ordenar envíos: más recientes primero
-  //const getDate = (e) => new Date(e.fechaRetiro || e.fechaCreacion || e.createdAt || 0);
   const getDate = (e) => parseLocalDateOnly(e.fechaRetiro || e.fecha || e.fechaCreacion || e.createdAt || 0);
   const sortedEnvios = enviosFiltrados.slice().sort((a, b) => getDate(b) - getDate(a));
 
-
-  function formatearFecha(fecha) {
-    if (!fecha) return "-";
-    const d = parseLocalDateOnly(fecha);
-    return isNaN(d) ? "-" : d.toLocaleDateString("es-UY");
-  }
 
   const handleVerComprobante = (url) => {
     setSelectedComprobanteUrl(url);

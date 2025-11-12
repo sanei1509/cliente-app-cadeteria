@@ -9,7 +9,7 @@ import { toast } from "react-toastify";
 
 const MAX_PLAN_PLUS = 10;
 
-// <<< SIN .env: poné tus valores directos acá >>>
+
 const CLOUDINARY_UPLOAD_URL = "https://api.cloudinary.com/v1_1/dvu1wtvuq/image/upload";
 const CLOUDINARY_PRESET = "Cadeteria";
 
@@ -116,7 +116,7 @@ const Navbar = () => {
 
     setIsUploading(true);
     try {
-      // 1) Subir a Cloudinary (SIN .env)
+      // 1) Subir a Cloudinary
       const fd = new FormData();
       fd.append("file", file);
       fd.append("upload_preset", CLOUDINARY_PRESET);
@@ -131,7 +131,7 @@ const Navbar = () => {
       const secureUrl = cloudData.secure_url || cloudData.url;
       if (!secureUrl) throw new Error("Cloudinary no devolvió secure_url");
 
-      // 2) Actualizar tu API con { imageUrl }
+      // 2) Actualizar la API con { imageUrl }
       const token =
         localStorage.getItem("token") ||
         localStorage.getItem("auth_token") ||
