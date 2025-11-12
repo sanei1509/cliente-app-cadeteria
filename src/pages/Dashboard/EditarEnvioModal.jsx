@@ -7,7 +7,7 @@ import { useDispatch } from "react-redux";
 import { updateEnvio } from "../../features/enviosSlice";
 import { toast } from "react-toastify";
 import { Spinner } from "../../components/Spinner";
-import { reauth } from "../../utils/reauthUtils";
+import { manejarError } from "../../utils/errorHandler";
 
 /**
  * Modal para editar un envío existente
@@ -126,12 +126,8 @@ const EditarEnvioModal = ({ isOpen, onClose, envioId, onSuccess }) => {
         });
       })
       .catch((error) => {
-        if (error.message === "UNAUTHORIZED") {
-          reauth(navigate);
-        } else {
-          toast.error(error.message || "Error de conexión al cargar el envío");
-          onClose();
-        }
+        manejarError(error, navigate, "Error de conexión al cargar el envío");
+        onClose();
       })
       .finally(() => {
         setIsLoading(false);
@@ -275,13 +271,7 @@ const EditarEnvioModal = ({ isOpen, onClose, envioId, onSuccess }) => {
         if (onSuccess) onSuccess();
       })
       .catch((error) => {
-        if (error.message === "UNAUTHORIZED") {
-          reauth(navigate);
-        } else {
-          toast.error(
-            error.message || "Error de conexión. Por favor, intenta nuevamente."
-          );
-        }
+        manejarError(error, navigate, "Error de conexión. Por favor, intenta nuevamente.");
       })
       .finally(() => {
         setIsSubmitting(false);

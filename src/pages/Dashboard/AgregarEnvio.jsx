@@ -121,8 +121,7 @@ const AgregarEnvio = () => {
           setUploadingComprobante(false);
           return;
         }
-      } catch (error) {
-        console.error("Error al subir comprobante:", error);
+      } catch {
         toast.error("Error al subir el comprobante");
         setIsSubmitting(false);
         setUploadingComprobante(false);

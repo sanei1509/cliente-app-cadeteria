@@ -5,7 +5,7 @@ import { updateUserPlan } from "../features/userSlice";
 import { API_CESAR } from "../api/config";
 import "./UpgradePlanModal.css";
 import { toast } from 'react-toastify';
-import { reauth } from "../utils/reauthUtils";
+import { manejarError } from "../utils/errorHandler";
 
 const CancelPlanModal = ({ isOpen, onClose }) => {
   const [isLoading, setIsLoading] = useState(false);
@@ -44,12 +44,8 @@ const CancelPlanModal = ({ isOpen, onClose }) => {
         onClose();
       })
       .catch((e) => {
-        if (e.message === "UNAUTHORIZED") {
-          reauth(navigate);
-        } else {
-          setError(e.message);
-          toast.error(e.message || "Error al cancelar el plan");
-        }
+        setError(e.message);
+        manejarError(e, navigate, "Error al cancelar el plan");
       })
       .finally(() => {
         setIsLoading(false);

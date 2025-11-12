@@ -81,7 +81,7 @@ const ListarEnvios = () => {
 
     fetch(url, {
       method: "GET",
-      headers: { authorization: `Bearer ${token}` },
+      headers: { Authorization: `Bearer ${token}` },
     })
       .then((r) => {
         if (r.ok) return r.json();

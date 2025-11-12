@@ -86,7 +86,7 @@ const AdminListaEnvios = () => {
     fetch(url, {
       method: "GET",
       headers: {
-        authorization: `Bearer ${token}`
+        Authorization: `Bearer ${token}`
       },
     })
       .then((response) => {

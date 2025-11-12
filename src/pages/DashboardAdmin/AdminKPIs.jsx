@@ -8,7 +8,7 @@ import {
   UsersIcon,
   ClockIcon,
 } from "../../components/icons";
-import { Spinner } from "../../components/Spinner";
+import KPICard from "../../components/KPICard";
 import { reauth } from "../../utils/reauthUtils";
 
 const AdminKPIs = () => {
@@ -48,79 +48,42 @@ const AdminKPIs = () => {
 
   return (
     <section className="stats-grid">
-      <article className="stat-card">
-        <div className="stat-header">
-          <span className="stat-label">Total de envíos</span>
-          <div className="stat-icon stat-icon-primary">
-            <PackageIcon />
-          </div>
-        </div>
-        <div className="stat-value">
-          {isLoading ? (
-            <Spinner color={"text-primary"} size={"spinner-border-md"} />
-          ) : (
-            totalEnvios
-          )}
-        </div>
-        <div className="stat-change">
-          {isLoading ? (
-            <Spinner color={"text-primary"} size={"spinner-border-sm"} />
-          ) : (
-            `${entregados} entregados`
-          )}
-        </div>
-      </article>
+      <KPICard
+        label="Total de envíos"
+        icon={<PackageIcon />}
+        iconColor="primary"
+        value={totalEnvios}
+        isLoading={isLoading}
+        subtitle={`${entregados} entregados`}
+        subtitleLoading={isLoading}
+      />
 
-      <article className="stat-card">
-        <div className="stat-header">
-          <span className="stat-label">En ruta</span>
-          <div className="stat-icon stat-icon-info">
-            <TruckIcon width={20} height={20} />
-          </div>
-        </div>
-        <div className="stat-value">
-          {isLoading ? (
-            <Spinner color={"text-primary"} size={"spinner-border-md"} />
-          ) : (
-            enRuta
-          )}
-        </div>
-        <div className="stat-change">En camino a destino</div>
-      </article>
+      <KPICard
+        label="En ruta"
+        icon={<TruckIcon width={20} height={20} />}
+        iconColor="info"
+        value={enRuta}
+        isLoading={isLoading}
+        subtitle="En camino a destino"
+      />
 
-      <article className="stat-card">
-        <div className="stat-header">
-          <span className="stat-label">Usuarios registrados</span>
-          <div className="stat-icon stat-icon-success">
-            <UsersIcon />
-          </div>
-        </div>
-        <div className="stat-value">
-          {isLoading ? (
-            <Spinner color={"text-primary"} size={"spinner-border-md"} />
-          ) : (
-            totalUsuarios
-          )}
-        </div>
-        <div className="stat-change">Total en el sistema</div>
-      </article>
+      <KPICard
+        label="Usuarios registrados"
+        icon={<UsersIcon />}
+        iconColor="success"
+        value={totalUsuarios}
+        isLoading={isLoading}
+        subtitle="Total en el sistema"
+      />
 
-      <article className="stat-card">
-        <div className="stat-header">
-          <span className="stat-label">Pendientes</span>
-          <div className="stat-icon stat-icon-warning">
-            <ClockIcon />
-          </div>
-        </div>
-        <div className="stat-value">
-          {isLoading ? (
-            <Spinner color={"text-primary"} size={"spinner-border-md"} />
-          ) : (
-            pendientes
-          )}
-        </div>
-        <div className="stat-change">Por recoger</div>
-      </article>
+      <KPICard
+        label="Pendientes"
+        icon={<ClockIcon />}
+        iconColor="warning"
+        value={pendientes}
+        isLoading={isLoading}
+        subtitle="Por recoger"
+      />
     </section>
   );
 };

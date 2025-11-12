@@ -44,19 +44,32 @@ const Login = () => {
       if (response.ok) {
         const data = await response.json();
 
+        console.log("Respuesta del servidor:", data);
+
         // Limpiar localStorage antes de guardar nuevos datos
         localStorage.clear();
 
         // Guardar el token en localStorage
-        localStorage.setItem("token", data.token?.token);
+        // Manejar diferentes estructuras de respuesta
+        const token = data.token?.token || data.token || data.accessToken;
+
+        if (!token) {
+          console.error("No se encontró el token en la respuesta:", data);
+          setError("Error al procesar el inicio de sesión");
+          return;
+        }
+
+        localStorage.setItem("token", token);
+        console.log("Token guardado:", token);
 
         // Guardar datos del usuario en Redux (automáticamente sincroniza con localStorage)
-        if (data.token?.user) {
-          dispatch(setUser(data.token?.user));
+        const user = data.token?.user || data.user;
+        if (user) {
+          dispatch(setUser(user));
         }
 
         // Redirigir según el rol del usuario
-        const role = data.token?.user?.role;
+        const role = user?.role;
         if (role === "admin") {
           navigate("/dashboardAdmin");
         } else {
@@ -70,11 +83,9 @@ const Login = () => {
         const errorMsg = "Credenciales incorrectas";
         setError(errorMsg);
       }
-    } catch (error) {
-      console.log(error);
+    } catch {
       const errorMsg = "Error de conexión. Por favor, intenta nuevamente.";
       setError(errorMsg);
-      // toast.error(errorMsg);
     } finally {
       setIsSubmitting(false);
     }

@@ -7,6 +7,8 @@ import CancelPlanModal from "../../components/CancelPlanModal";
 import { API_CESAR } from "../../api/config";
 import { toast } from "react-toastify";
 
+const MAX_PLAN_PLUS = 10;
+
 // <<< SIN .env: poné tus valores directos acá >>>
 const CLOUDINARY_UPLOAD_URL = "https://api.cloudinary.com/v1_1/dvu1wtvuq/image/upload";
 const CLOUDINARY_PRESET = "Cadeteria";
@@ -17,6 +19,9 @@ const Navbar = () => {
 
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [cancelPlanModalOpen, setCancelPlanModalOpen] = useState(false);
+
+  // Obtener envíos desde Redux
+  const allEnvios = useSelector((state) => state.envios.allEnvios);
 
   // Modal para subir foto
   const [photoModalOpen, setPhotoModalOpen] = useState(false);
@@ -87,6 +92,20 @@ const Navbar = () => {
 
     setFile(f);
     setPreview(URL.createObjectURL(f));
+  };
+
+  const handleCancelPlanClick = () => {
+    // Validar cantidad de envíos pendientes antes de abrir el modal
+    const enviosPendientes = allEnvios.filter((e) => e.estado === "pendiente").length;
+
+    if (enviosPendientes > MAX_PLAN_PLUS) {
+      toast.error("No puedes cancelar el plan, tu cantidad de envíos pendientes supera la versión plus");
+      setDropdownOpen(false);
+      return;
+    }
+
+    setDropdownOpen(false);
+    setCancelPlanModalOpen(true);
   };
 
   const uploadAndSave = async () => {
@@ -220,10 +239,7 @@ const Navbar = () => {
                   <div className="dropdown-divider"></div>
                   <button
                     className="navbar-dropdown-item"
-                    onClick={() => {
-                      setDropdownOpen(false);
-                      setCancelPlanModalOpen(true);
-                    }}
+                    onClick={handleCancelPlanClick}
                   >
                     <span>Cancelar Plan Premium</span>
                   </button>

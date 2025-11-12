@@ -9,7 +9,7 @@ import {
 } from "../../components/icons";
 import { selectUserPlan } from "../../features/userSlice";
 import UpgradePlanModal from "../../components/UpgradePlanModal";
-import { Spinner } from "../../components/Spinner";
+import KPICard from "../../components/KPICard";
 
 const KPIs = () => {
   const [upgradeModalOpen, setUpgradeModalOpen] = useState(false);
@@ -62,75 +62,42 @@ const KPIs = () => {
       {/* Contenedor de las tarjetas */}
       <section className="kpis-grid">
         {/* 1 */}
-        <article className="stat-card">
-          <div className="stat-header">
-            <span className="stat-label">Envíos totales</span>
-            <div className="stat-icon stat-icon-primary">
-              <PackageIcon />
-            </div>
-          </div>
-          <div className="stat-value">
-            {isLoading ? (
-              <Spinner color={"text-primary"} size={"spinner-border-md"} />
-            ) : (
-              stats.total
-            )}
-          </div>
-          <div className="stat-change" />
-        </article>
+        <KPICard
+          label="Envíos totales"
+          icon={<PackageIcon />}
+          iconColor="primary"
+          value={stats.total}
+          isLoading={isLoading}
+        />
 
         {/* 2 */}
-        <article className="stat-card">
-          <div className="stat-header">
-            <span className="stat-label">En tránsito</span>
-            <div className="stat-icon stat-icon-info">
-              <TruckIcon width={20} height={20} />
-            </div>
-          </div>
-          <div className="stat-value">
-            {isLoading ? (
-              <Spinner color={"text-primary"} size={"spinner-border-md"} />
-            ) : (
-              stats.enTransito
-            )}
-          </div>
-          <div className="stat-change">En camino a destino</div>
-        </article>
+        <KPICard
+          label="En tránsito"
+          icon={<TruckIcon width={20} height={20} />}
+          iconColor="info"
+          value={stats.enTransito}
+          isLoading={isLoading}
+          subtitle="En camino a destino"
+        />
 
         {/* 3 */}
-        <article className="stat-card">
-          <div className="stat-header">
-            <span className="stat-label">Entregados (semana)</span>
-            <div className="stat-icon stat-icon-success">
-              <CheckCircleIcon />
-            </div>
-          </div>
-          <div className="stat-value">
-            {isLoading ? (
-              <Spinner color={"text-primary"} size={"spinner-border-md"} />
-            ) : (
-              stats.entregadosSemana
-            )}
-          </div>
-          <div className="stat-change">Últimos 7 días</div>
-        </article>
+        <KPICard
+          label="Entregados (semana)"
+          icon={<CheckCircleIcon />}
+          iconColor="success"
+          value={stats.entregadosSemana}
+          isLoading={isLoading}
+          subtitle="Últimos 7 días"
+        />
 
         {/* 4 */}
-        <article className="stat-card">
-          <div className="stat-header">
-            <span className="stat-label">Envíos pendientes</span>
-            <div className="stat-icon stat-icon-warning">
-              <ClockIcon />
-            </div>
-          </div>
-          <div className="stat-value">
-            {isLoading ? (
-              <Spinner color={"text-primary"} size={"spinner-border-md"} />
-            ) : (
-              stats.pendientes
-            )}
-          </div>
-
+        <KPICard
+          label="Envíos pendientes"
+          icon={<ClockIcon />}
+          iconColor="warning"
+          value={stats.pendientes}
+          isLoading={isLoading}
+        >
           {plan === "plus" && (
             <>
               <div className="stat-change" style={{ marginBottom: "0.5rem" }}>
@@ -193,7 +160,7 @@ const KPIs = () => {
               Plan Premium - Sin límites ✨
             </div>
           )}
-        </article>
+        </KPICard>
       </section>
     </>
   );
