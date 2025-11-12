@@ -4,7 +4,7 @@ import { useDispatch } from "react-redux";
 import { updateUserPlan } from "../features/userSlice";
 import { API_CESAR } from "../api/config";
 import "./UpgradePlanModal.css";
-import { toast } from 'react-toastify';
+import { toast } from "react-toastify";
 import { manejarError } from "../utils/errorHandler";
 
 const UpgradePlanModal = ({ isOpen, onClose, onUpgradeSuccess }) => {
@@ -40,10 +40,7 @@ const UpgradePlanModal = ({ isOpen, onClose, onUpgradeSuccess }) => {
       .then((updatedUser) => {
         // Actualizar plan en Redux (automáticamente sincroniza con localStorage)
         dispatch(updateUserPlan(updatedUser.plan));
-
-        // Mostrar toast de éxito
         toast.success("¡Plan actualizado a Premium exitosamente!");
-
         // Notificar al componente padre del éxito
         if (onUpgradeSuccess) {
           onUpgradeSuccess();

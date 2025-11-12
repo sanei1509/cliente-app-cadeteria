@@ -27,12 +27,14 @@ const CategoriasChart = () => {
   }, {});
 
   // Preparar datos para el gráfico y ordenar por cantidad descendente
-  const data = Object.entries(categoriasCounts)
-    .map(([nombre, cantidad]) => ({
-      nombre,
-      cantidad,
-    }))
-    .sort((a, b) => b.cantidad - a.cantidad);
+  const data = [];
+  for (const nombre in categoriasCounts) {
+    data.push({
+      nombre: nombre,
+      cantidad: categoriasCounts[nombre]
+    });
+  }
+  data.sort((a, b) => b.cantidad - a.cantidad);
 
   // Colores para las barras
   const COLORS = ["#ff6b35", "#f59e0b", "#10b981", "#3b82f6", "#8b5cf6", "#ec4899", "#14b8a6"];

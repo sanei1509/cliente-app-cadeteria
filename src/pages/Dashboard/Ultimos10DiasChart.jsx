@@ -20,15 +20,19 @@ const Ultimos10DiasChart = () => {
 
   const data = useMemo(() => {
     // Últimos 10 días (incluye hoy) en orden cronológico
-    const days = Array.from({ length: 10 }, (_, i) => {
+    const days = [];
+    for (let i = 0; i < 10; i++) {
       const d = new Date();
       d.setHours(0, 0, 0, 0);
       d.setDate(d.getDate() - (9 - i));
-      return d;
-    });
+      days.push(d);
+    }
 
     const indexByKey = new Map(days.map((d, i) => [toKey(d), i]));
-    const counts = Array(10).fill(0);
+    const counts = [];
+    for (let i = 0; i < 10; i++) {
+      counts.push(0);
+    }
 
     // Contar entregados por día
     allEnvios.forEach((e) => {

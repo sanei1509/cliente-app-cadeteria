@@ -9,6 +9,8 @@ import { toast } from "react-toastify";
 import { Spinner } from "../../components/Spinner";
 import { reauth } from "../../utils/reauthUtils";
 import Button from "../../components/Button";
+import { validateImageFile } from "../../utils/fileValidation";
+import { uploadToCloudinary } from "../../utils/cloudinary";
 
 const AgregarEnvio = () => {
   const navigate = useNavigate();
@@ -38,21 +40,15 @@ const AgregarEnvio = () => {
 
   const handleComprobanteUpload = (evt) => {
     const selectedFile = evt.target.files[0];
-    if (selectedFile) {
-      // Validar tamaño (max 5MB)
-      if (selectedFile.size > 5 * 1024 * 1024) {
-        toast.error("La imagen no debe superar los 5MB");
-        evt.target.value = null;
-        return;
-      }
-      // Validar tipo
-      if (!selectedFile.type.startsWith('image/')) {
-        toast.error("Solo se permiten archivos de imagen");
-        evt.target.value = null;
-        return;
-      }
-      setComprobanteFile(selectedFile);
+    if (!selectedFile) return;
+
+    const error = validateImageFile(selectedFile);
+    if (error) {
+      toast.error(error);
+      evt.target.value = null;
+      return;
     }
+    setComprobanteFile(selectedFile);
   };
 
   useEffect(() => {
@@ -63,9 +59,10 @@ const AgregarEnvio = () => {
         const res = await fetch(`${API_CESAR}/public/v1/categories`);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
-        setCategorias(Array.isArray(data) ? data : []);
+        const categoriasSeguras = data || [];
+        setCategorias(categoriasSeguras);
       } catch (err) {
-        setCatError("No se pudieron cargar las categorías.");
+        setCatError("No se pudieron cargar las categorías.", err);
       } finally {
         setCatLoading(false);
       }
@@ -95,32 +92,11 @@ const AgregarEnvio = () => {
 
     let comprobanteUrl;
 
-    // Subir comprobante a Cloudinary si existe
     if (comprobanteFile) {
-      const data = new FormData();
-      data.append("upload_preset", "Cadeteria");
-      data.append("file", comprobanteFile);
-
-      const cloudinaryURL = "https://api.cloudinary.com/v1_1/dvu1wtvuq/image/upload";
-
       try {
         setUploadingComprobante(true);
         toast.info("Subiendo comprobante...");
-        const response = await fetch(cloudinaryURL, {
-          method: "POST",
-          body: data,
-        });
-
-        if (response.ok) {
-          const cloudData = await response.json();
-          comprobanteUrl = cloudData.secure_url || cloudData.url;
-          console.log("Comprobante subido a Cloudinary:", comprobanteUrl);
-        } else {
-          toast.error("Error al subir el comprobante");
-          setIsSubmitting(false);
-          setUploadingComprobante(false);
-          return;
-        }
+        comprobanteUrl = await uploadToCloudinary(comprobanteFile);
       } catch {
         toast.error("Error al subir el comprobante");
         setIsSubmitting(false);
@@ -276,16 +252,7 @@ const AgregarEnvio = () => {
               style={errors.origenCalle ? { borderColor: "#dc2626" } : {}}
             />
             {errors.origenCalle && (
-              <div
-                style={{
-                  color: "#dc2626",
-                  fontSize: "0.875rem",
-                  marginTop: "0.25rem",
-                  fontWeight: "500",
-                }}
-              >
-                {errors.origenCalle.message}
-              </div>
+              <div className="form-error">{errors.origenCalle.message}</div>
             )}
           </div>
 
@@ -309,16 +276,7 @@ const AgregarEnvio = () => {
                 style={errors.origenNumero ? { borderColor: "#dc2626" } : {}}
               />
               {errors.origenNumero && (
-                <div
-                  style={{
-                    color: "#dc2626",
-                    fontSize: "0.875rem",
-                    marginTop: "0.25rem",
-                    fontWeight: "500",
-                  }}
-                >
-                  {errors.origenNumero.message}
-                </div>
+                <div className="form-error">{errors.origenNumero.message}</div>
               )}
             </div>
             <div className="form-group">
@@ -338,16 +296,7 @@ const AgregarEnvio = () => {
                 style={errors.origenCiudad ? { borderColor: "#dc2626" } : {}}
               />
               {errors.origenCiudad && (
-                <div
-                  style={{
-                    color: "#dc2626",
-                    fontSize: "0.875rem",
-                    marginTop: "0.25rem",
-                    fontWeight: "500",
-                  }}
-                >
-                  {errors.origenCiudad.message}
-                </div>
+                <div className="form-error">{errors.origenCiudad.message}</div>
               )}
             </div>
           </div>
@@ -389,16 +338,7 @@ const AgregarEnvio = () => {
               style={errors.destinoCalle ? { borderColor: "#dc2626" } : {}}
             />
             {errors.destinoCalle && (
-              <div
-                style={{
-                  color: "#dc2626",
-                  fontSize: "0.875rem",
-                  marginTop: "0.25rem",
-                  fontWeight: "500",
-                }}
-              >
-                {errors.destinoCalle.message}
-              </div>
+              <div className="form-error">{errors.destinoCalle.message}</div>
             )}
           </div>
 
@@ -422,16 +362,7 @@ const AgregarEnvio = () => {
                 style={errors.destinoNumero ? { borderColor: "#dc2626" } : {}}
               />
               {errors.destinoNumero && (
-                <div
-                  style={{
-                    color: "#dc2626",
-                    fontSize: "0.875rem",
-                    marginTop: "0.25rem",
-                    fontWeight: "500",
-                  }}
-                >
-                  {errors.destinoNumero.message}
-                </div>
+                <div className="form-error">{errors.destinoNumero.message}</div>
               )}
             </div>
             <div className="form-group">
@@ -451,16 +382,7 @@ const AgregarEnvio = () => {
                 style={errors.destinoCiudad ? { borderColor: "#dc2626" } : {}}
               />
               {errors.destinoCiudad && (
-                <div
-                  style={{
-                    color: "#dc2626",
-                    fontSize: "0.875rem",
-                    marginTop: "0.25rem",
-                    fontWeight: "500",
-                  }}
-                >
-                  {errors.destinoCiudad.message}
-                </div>
+                <div className="form-error">{errors.destinoCiudad.message}</div>
               )}
             </div>
           </div>
@@ -520,16 +442,7 @@ const AgregarEnvio = () => {
                 style={errors.fechaRetiro ? { borderColor: "#dc2626" } : {}}
               />
               {errors.fechaRetiro && (
-                <div
-                  style={{
-                    color: "#dc2626",
-                    fontSize: "0.875rem",
-                    marginTop: "0.25rem",
-                    fontWeight: "500",
-                  }}
-                >
-                  {errors.fechaRetiro.message}
-                </div>
+                <div className="form-error">{errors.fechaRetiro.message}</div>
               )}
             </div>
             <div className="form-group">
@@ -549,14 +462,7 @@ const AgregarEnvio = () => {
                 style={errors.horaRetiroAprox ? { borderColor: "#dc2626" } : {}}
               />
               {errors.horaRetiroAprox && (
-                <div
-                  style={{
-                    color: "#dc2626",
-                    fontSize: "0.875rem",
-                    marginTop: "0.25rem",
-                    fontWeight: "500",
-                  }}
-                >
+                <div className="form-error">
                   {errors.horaRetiroAprox.message}
                 </div>
               )}
@@ -588,16 +494,7 @@ const AgregarEnvio = () => {
                 <option value="grande">Grande</option>
               </select>
               {errors.tamanoPaquete && (
-                <div
-                  style={{
-                    color: "#dc2626",
-                    fontSize: "0.875rem",
-                    marginTop: "0.25rem",
-                    fontWeight: "500",
-                  }}
-                >
-                  {errors.tamanoPaquete.message}
-                </div>
+                <div className="form-error">{errors.tamanoPaquete.message}</div>
               )}
             </div>
             <div className="form-group">
@@ -635,16 +532,7 @@ const AgregarEnvio = () => {
                 ))}
               </select>
               {errors.categoriaId && (
-                <div
-                  style={{
-                    color: "#dc2626",
-                    fontSize: "0.875rem",
-                    marginTop: "0.25rem",
-                    fontWeight: "500",
-                  }}
-                >
-                  {errors.categoriaId.message}
-                </div>
+                <div className="form-error">{errors.categoriaId.message}</div>
               )}
             </div>
           </div>
@@ -691,7 +579,13 @@ const AgregarEnvio = () => {
             <label htmlFor="comprobanteFile" className="form-label">
               Comprobante de pago (opcional)
               {comprobanteFile && (
-                <span style={{ marginLeft: '0.5rem', color: 'var(--success-color)', fontSize: '0.85rem' }}>
+                <span
+                  style={{
+                    marginLeft: "0.5rem",
+                    color: "var(--success-color)",
+                    fontSize: "0.85rem",
+                  }}
+                >
                   ✓ {comprobanteFile.name}
                 </span>
               )}
@@ -704,7 +598,9 @@ const AgregarEnvio = () => {
               onChange={handleComprobanteUpload}
               disabled={isSubmitting || uploadingComprobante}
             />
-            <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+            <span
+              style={{ fontSize: "0.85rem", color: "var(--text-secondary)" }}
+            >
               Máximo 5MB - JPG, PNG, GIF
             </span>
           </div>

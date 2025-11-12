@@ -22,8 +22,9 @@ export default function Dashboard() {
       <div className="dashboard-content">
         {/* Header */}
         <div className="dashboard-header">
-          <h1 className="dashboard-title" style={{ textTransform: 'none' }}>
-            Bienvenido <span style={{ textTransform: 'capitalize' }}>{user?.nombre}</span>!
+          <h1 className="dashboard-title" style={{ textTransform: "none" }}>
+            Bienvenido{" "}
+            <span style={{ textTransform: "capitalize" }}>{user?.nombre}</span>!
           </h1>
           <p className="dashboard-subtitle">
             Aqui tienes un resumen de tus pedidos y métricas principales.

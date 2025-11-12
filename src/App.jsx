@@ -9,13 +9,11 @@ import { Provider } from 'react-redux';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
-// Componente para proteger rutas privadas
 const Private = ({ children }) => {
   const isAuth = !!localStorage.getItem("token");
   return isAuth ? children : <Navigate to="/login" replace />;
 };
 
-// Componente para proteger rutas de admin
 const PrivateAdmin = ({ children }) => {
   const isAuth = !!localStorage.getItem("token");
   const user = JSON.parse(localStorage.getItem("user") || "{}");
@@ -26,14 +24,12 @@ const PrivateAdmin = ({ children }) => {
   }
 
   if (!isAdmin) {
-    // Si está autenticado pero no es admin, redirigir a dashboard normal
     return <Navigate to="/dashboard" replace />;
   }
 
   return children;
 };
 
-// Componente principal con todas las rutas
 export default function App() {
   return (
     <Provider store={store}>

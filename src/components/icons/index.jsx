@@ -8,3 +8,4 @@ export { default as LayersIcon } from './LayersIcon';
 export { default as StarIcon } from './StarIcon';
 export { default as CheckCircleIcon } from './CheckCircleIcon';
 export { default as PremiumStarIcon } from './PremiumStarIcon';
+export { default as EyeIcon } from './EyeIcon';

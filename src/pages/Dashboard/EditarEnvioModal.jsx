@@ -8,6 +8,8 @@ import { updateEnvio } from "../../features/enviosSlice";
 import { toast } from "react-toastify";
 import { Spinner } from "../../components/Spinner";
 import { manejarError } from "../../utils/errorHandler";
+import { validateImageFile } from "../../utils/fileValidation";
+import { uploadToCloudinary } from "../../utils/cloudinary";
 
 /**
  * Modal para editar un envío existente
@@ -42,28 +44,25 @@ const EditarEnvioModal = ({ isOpen, onClose, envioId, onSuccess }) => {
 
   const handleComprobanteUpload = (evt) => {
     const selectedFile = evt.target.files[0];
-    if (selectedFile) {
-      // Validar tamaño (max 5MB)
-      if (selectedFile.size > 5 * 1024 * 1024) {
-        toast.error("La imagen no debe superar los 5MB");
-        evt.target.value = null;
-        return;
-      }
-      // Validar tipo
-      if (!selectedFile.type.startsWith('image/')) {
-        toast.error("Solo se permiten archivos de imagen");
-        evt.target.value = null;
-        return;
-      }
-      setComprobanteFile(selectedFile);
+    if (!selectedFile) return;
+
+    const error = validateImageFile(selectedFile);
+    if (error) {
+      toast.error(error);
+      evt.target.value = null;
+      return;
     }
+    setComprobanteFile(selectedFile);
   };
 
   // Cargar categorías al montar
   useEffect(() => {
     fetch(`${API_CESAR}/public/v1/categories`)
       .then((res) => (res.ok ? res.json() : []))
-      .then((data) => setCategories(Array.isArray(data) ? data : []))
+      .then((data) => {
+        const categoriasSeguras = data || [];
+        setCategories(categoriasSeguras);
+      })
       .catch(() => setCategories([]));
   }, []);
 
@@ -139,36 +138,14 @@ const EditarEnvioModal = ({ isOpen, onClose, envioId, onSuccess }) => {
 
     const token = localStorage.getItem("token");
 
-    let comprobanteUrl = currentComprobanteUrl; // Mantener el existente por defecto
+    let comprobanteUrl = currentComprobanteUrl;
 
-    // Subir nuevo comprobante a Cloudinary si existe
     if (comprobanteFile) {
-      const data = new FormData();
-      data.append("upload_preset", "Cadeteria");
-      data.append("file", comprobanteFile);
-
-      const cloudinaryURL = "https://api.cloudinary.com/v1_1/dvu1wtvuq/image/upload";
-
       try {
         setUploadingComprobante(true);
         toast.info("Subiendo comprobante...");
-        const response = await fetch(cloudinaryURL, {
-          method: "POST",
-          body: data,
-        });
-
-        if (response.ok) {
-          const cloudData = await response.json();
-          comprobanteUrl = cloudData.secure_url || cloudData.url;
-          console.log("Comprobante subido a Cloudinary:", comprobanteUrl);
-        } else {
-          toast.error("Error al subir el comprobante");
-          setIsSubmitting(false);
-          setUploadingComprobante(false);
-          return;
-        }
-      } catch (error) {
-        console.error("Error al subir comprobante:", error);
+        comprobanteUrl = await uploadToCloudinary(comprobanteFile);
+      } catch {
         toast.error("Error al subir el comprobante");
         setIsSubmitting(false);
         setUploadingComprobante(false);
@@ -324,15 +301,7 @@ const EditarEnvioModal = ({ isOpen, onClose, envioId, onSuccess }) => {
                   })}
                 />
                 {errors.origenCalle && (
-                  <div
-                    style={{
-                      color: "#dc2626",
-                      fontSize: "0.875rem",
-                      marginTop: "0.25rem",
-                    }}
-                  >
-                    {errors.origenCalle.message}
-                  </div>
+                  <div className="form-error">{errors.origenCalle.message}</div>
                 )}
               </div>
               <div className="form-group">
@@ -345,13 +314,7 @@ const EditarEnvioModal = ({ isOpen, onClose, envioId, onSuccess }) => {
                   })}
                 />
                 {errors.origenNumero && (
-                  <div
-                    style={{
-                      color: "#dc2626",
-                      fontSize: "0.875rem",
-                      marginTop: "0.25rem",
-                    }}
-                  >
+                  <div className="form-error">
                     {errors.origenNumero.message}
                   </div>
                 )}
@@ -370,13 +333,7 @@ const EditarEnvioModal = ({ isOpen, onClose, envioId, onSuccess }) => {
                   })}
                 />
                 {errors.origenCiudad && (
-                  <div
-                    style={{
-                      color: "#dc2626",
-                      fontSize: "0.875rem",
-                      marginTop: "0.25rem",
-                    }}
-                  >
+                  <div className="form-error">
                     {errors.origenCiudad.message}
                   </div>
                 )}
@@ -424,13 +381,7 @@ const EditarEnvioModal = ({ isOpen, onClose, envioId, onSuccess }) => {
                   })}
                 />
                 {errors.destinoCalle && (
-                  <div
-                    style={{
-                      color: "#dc2626",
-                      fontSize: "0.875rem",
-                      marginTop: "0.25rem",
-                    }}
-                  >
+                  <div className="form-error">
                     {errors.destinoCalle.message}
                   </div>
                 )}
@@ -445,13 +396,7 @@ const EditarEnvioModal = ({ isOpen, onClose, envioId, onSuccess }) => {
                   })}
                 />
                 {errors.destinoNumero && (
-                  <div
-                    style={{
-                      color: "#dc2626",
-                      fontSize: "0.875rem",
-                      marginTop: "0.25rem",
-                    }}
-                  >
+                  <div className="form-error">
                     {errors.destinoNumero.message}
                   </div>
                 )}
@@ -470,13 +415,7 @@ const EditarEnvioModal = ({ isOpen, onClose, envioId, onSuccess }) => {
                   })}
                 />
                 {errors.destinoCiudad && (
-                  <div
-                    style={{
-                      color: "#dc2626",
-                      fontSize: "0.875rem",
-                      marginTop: "0.25rem",
-                    }}
-                  >
+                  <div className="form-error">
                     {errors.destinoCiudad.message}
                   </div>
                 )}
@@ -532,13 +471,7 @@ const EditarEnvioModal = ({ isOpen, onClose, envioId, onSuccess }) => {
                   })}
                 />
                 {errors.fechaRetiro && (
-                  <div
-                    style={{
-                      color: "#dc2626",
-                      fontSize: "0.875rem",
-                      marginTop: "0.25rem",
-                    }}
-                  >
+                  <div className="form-error">
                     {errors.fechaRetiro.message}
                   </div>
                 )}
@@ -558,13 +491,7 @@ const EditarEnvioModal = ({ isOpen, onClose, envioId, onSuccess }) => {
                   })}
                 />
                 {errors.horaRetiroAprox && (
-                  <div
-                    style={{
-                      color: "#dc2626",
-                      fontSize: "0.875rem",
-                      marginTop: "0.25rem",
-                    }}
-                  >
+                  <div className="form-error">
                     {errors.horaRetiroAprox.message}
                   </div>
                 )}
@@ -583,13 +510,7 @@ const EditarEnvioModal = ({ isOpen, onClose, envioId, onSuccess }) => {
                   <option value="grande">Grande</option>
                 </select>
                 {errors.tamanoPaquete && (
-                  <div
-                    style={{
-                      color: "#dc2626",
-                      fontSize: "0.875rem",
-                      marginTop: "0.25rem",
-                    }}
-                  >
+                  <div className="form-error">
                     {errors.tamanoPaquete.message}
                   </div>
                 )}
@@ -628,13 +549,7 @@ const EditarEnvioModal = ({ isOpen, onClose, envioId, onSuccess }) => {
                   {notasValue.length}/100 caracteres
                 </div>
                 {errors.notas && (
-                  <div
-                    style={{
-                      color: "#dc2626",
-                      fontSize: "0.875rem",
-                      marginTop: "0.25rem",
-                    }}
-                  >
+                  <div className="form-error">
                     {errors.notas.message}
                   </div>
                 )}

@@ -82,22 +82,24 @@ const TendenciaEnvios = () => {
   });
 
   // Preparar datos para el gráfico
-  const data = Object.entries(enviosPorFecha)
-    .map(([fecha, counts]) => {
-      const dateObj = new Date(fecha + 'T00:00:00');
-      return {
-        fecha: dateObj.toLocaleDateString("es-UY", { day: "2-digit", month: "2-digit" }),
-        fechaCompleta: dateObj.toLocaleDateString("es-UY"),
-        total: counts.total,
-        entregados: counts.entregados,
-        cancelados: counts.cancelados,
-      };
-    })
-    .sort((a, b) => {
-      const dateA = a.fecha.split('/').reverse().join('');
-      const dateB = b.fecha.split('/').reverse().join('');
-      return dateA.localeCompare(dateB);
+  const data = [];
+  for (const fecha in enviosPorFecha) {
+    const counts = enviosPorFecha[fecha];
+    const dateObj = new Date(fecha + 'T00:00:00');
+    data.push({
+      fecha: dateObj.toLocaleDateString("es-UY", { day: "2-digit", month: "2-digit" }),
+      fechaCompleta: dateObj.toLocaleDateString("es-UY"),
+      total: counts.total,
+      entregados: counts.entregados,
+      cancelados: counts.cancelados
     });
+  }
+  // Ordenar por fecha
+  data.sort((a, b) => {
+    const dateA = a.fecha.split('/').reverse().join('');
+    const dateB = b.fecha.split('/').reverse().join('');
+    return dateA.localeCompare(dateB);
+  });
 
   // Si no hay datos
   if (data.length === 0 || enviosUltimoMes.length === 0) {

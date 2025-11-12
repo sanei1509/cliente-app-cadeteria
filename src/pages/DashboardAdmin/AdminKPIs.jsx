@@ -30,7 +30,10 @@ const AdminKPIs = () => {
         if (res.status === 401) throw new Error("UNAUTHORIZED");
         return [];
       })
-      .then(data => setTotalUsuarios(Array.isArray(data) ? data.length : 0))
+      .then(data => {
+        const usuarios = data || [];
+        setTotalUsuarios(usuarios.length);
+      })
       .catch((error) => {
         if (error.message === "UNAUTHORIZED") {
           reauth(navigate);
@@ -40,11 +43,11 @@ const AdminKPIs = () => {
       });
   }, [navigate]);
 
-  // Calcular estadísticas desde TODOS los envíos (sin filtros)
-  const totalEnvios = Array.isArray(allEnvios) ? allEnvios.length : 0;
-  const enRuta = Array.isArray(allEnvios) ? allEnvios.filter(e => e.estado === 'en_ruta').length : 0;
-  const pendientes = Array.isArray(allEnvios) ? allEnvios.filter(e => e.estado === 'pendiente').length : 0;
-  const entregados = Array.isArray(allEnvios) ? allEnvios.filter(e => e.estado === 'entregado').length : 0;
+  const enviosSeguros = allEnvios || [];
+  const totalEnvios = enviosSeguros.length;
+  const enRuta = enviosSeguros.filter(e => e.estado === 'en_ruta').length;
+  const pendientes = enviosSeguros.filter(e => e.estado === 'pendiente').length;
+  const entregados = enviosSeguros.filter(e => e.estado === 'entregado').length;
 
   return (
     <section className="stats-grid">

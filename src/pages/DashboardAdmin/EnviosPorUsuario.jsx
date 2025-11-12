@@ -49,13 +49,20 @@ const EnviosPorUsuario = () => {
   }, {});
 
   // Preparar datos para el gráfico, ordenar y tomar top 10
-  const data = Object.entries(empresasCounts)
-    .map(([empresaName, info]) => ({
+  const data = [];
+  for (const empresaName in empresasCounts) {
+    const info = empresasCounts[empresaName];
+    data.push({
       empresa: info.nombre,
-      cantidad: info.cantidad,
-    }))
-    .sort((a, b) => b.cantidad - a.cantidad)
-    .slice(0, 10); // Top 10
+      cantidad: info.cantidad
+    });
+  }
+  data.sort((a, b) => b.cantidad - a.cantidad);
+  // Tomar solo los primeros 10
+  const top10Data = [];
+  for (let i = 0; i < 10 && i < data.length; i++) {
+    top10Data.push(data[i]);
+  }
 
   // Gradiente de colores de naranja a azul
   const COLORS = [
@@ -64,7 +71,7 @@ const EnviosPorUsuario = () => {
   ];
 
   // Si no hay datos
-  if (data.length === 0) {
+  if (top10Data.length === 0) {
     return (
       <div className="card">
         <h3 className="card-title">Top 10 Empresas Más Activas</h3>
@@ -109,7 +116,7 @@ const EnviosPorUsuario = () => {
       <div style={{ width: "100%", height: "350px" }}>
         <ResponsiveContainer width="100%" height="100%">
           <BarChart
-            data={data}
+            data={top10Data}
             layout="vertical"
             margin={{ top: 20, right: 30, left: 150, bottom: 20 }}
           >
@@ -127,7 +134,7 @@ const EnviosPorUsuario = () => {
             />
             <Tooltip content={<CustomTooltip />} cursor={{ fill: "rgba(0, 0, 0, 0.05)" }} />
             <Bar dataKey="cantidad" radius={[0, 4, 4, 0]}>
-              {data.map((entry, index) => (
+              {top10Data.map((entry, index) => (
                 <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
               ))}
             </Bar>

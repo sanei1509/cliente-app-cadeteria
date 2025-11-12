@@ -2244,4 +2244,15 @@ a:hover {
   background: var(--surface);
 }
 
+/* ============================================
+   FORM ERROR MESSAGE
+   ============================================ */
+
+.form-error {
+  color: #dc2626;
+  font-size: 0.875rem;
+  margin-top: 0.25rem;
+  font-weight: 500;
+}
+
 

@@ -1,15 +1,13 @@
-// src/pages/Login.jsx
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { setUser } from "../../features/userSlice";
 import Logo from "./Logo";
-import { API_SANTI } from "../../api/config";
 import { API_CESAR } from "../../api/config";
-import { toast } from "react-toastify";
 import { useForm } from "react-hook-form";
 import { Spinner } from "../../components/Spinner";
 import Button from "../../components/Button";
+import { EyeIcon } from "../../components/icons";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -44,31 +42,22 @@ const Login = () => {
       if (response.ok) {
         const data = await response.json();
 
-        console.log("Respuesta del servidor:", data);
-
-        // Limpiar localStorage antes de guardar nuevos datos
         localStorage.clear();
 
-        // Guardar el token en localStorage
-        // Manejar diferentes estructuras de respuesta
         const token = data.token?.token || data.token || data.accessToken;
 
         if (!token) {
-          console.error("No se encontró el token en la respuesta:", data);
           setError("Error al procesar el inicio de sesión");
           return;
         }
 
         localStorage.setItem("token", token);
-        console.log("Token guardado:", token);
 
-        // Guardar datos del usuario en Redux (automáticamente sincroniza con localStorage)
         const user = data.token?.user || data.user;
         if (user) {
           dispatch(setUser(user));
         }
 
-        // Redirigir según el rol del usuario
         const role = user?.role;
         if (role === "admin") {
           navigate("/dashboardAdmin");
@@ -77,15 +66,11 @@ const Login = () => {
         }
         reset();
       } else {
-        // Manejar errores de autenticación
-        const errorData = await response.json();
-        console.log("Error de login:", errorData);
-        const errorMsg = "Credenciales incorrectas";
-        setError(errorMsg);
+        await response.json().catch(() => ({}));
+        setError("Credenciales incorrectas");
       }
     } catch {
-      const errorMsg = "Error de conexión. Por favor, intenta nuevamente.";
-      setError(errorMsg);
+      setError("Error de conexión. Por favor, intenta nuevamente.");
     } finally {
       setIsSubmitting(false);
     }
@@ -164,37 +149,13 @@ const Login = () => {
                   showPassword ? "Ocultar contraseña" : "Mostrar contraseña"
                 }
               >
-                {showPassword ? (
-                  <svg
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="1.8"
-                  >
-                    <path d="M3 3l18 18" />
-                    <path d="M10.58 10.58A3 3 0 0 0 13.42 13.4" />
-                    <path d="M9.9 4.24A10.94 10.94 0 0 1 12 4c7 0 11 8 11 8a19.4 19.4 0 0 1-4.15 5.35" />
-                    <path d="M6.1 6.1A19.4 19.4 0 0 0 1 12s4 8 11 8c1.13 0 2.21-.18 3.23-.5" />
-                  </svg>
-                ) : (
-                  <svg
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="1.8"
-                  >
-                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12z" />
-                    <circle cx="12" cy="12" r="3" />
-                  </svg>
-                )}
+                <EyeIcon isOpen={!showPassword} />
               </button>
             </div>{" "}
             {errors.password && (
               <div
                 style={{
-                  // padding: "0.75rem",
                   backgroundColor: "rgba(242, 242, 242, 0)",
-                  // border: "1px solid rgba(239, 68, 68, 0.3)",
                   borderRadius: "var(--radius-md)",
                   color: "#dc2626",
                   fontSize: "0.875rem",
@@ -206,13 +167,10 @@ const Login = () => {
             )}
           </div>
 
-          {/* Mostrar mensaje de error si existe */}
           {error && (
             <div
               style={{
-                // padding: "0.75rem",
                 backgroundColor: "rgba(242, 242, 242, 0)",
-                // border: "1px solid rgba(239, 68, 68, 0.3)",
                 borderRadius: "var(--radius-md)",
                 color: "#dc2626",
                 fontSize: "0.875rem",

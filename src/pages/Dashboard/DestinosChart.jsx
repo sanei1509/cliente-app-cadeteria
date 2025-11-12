@@ -27,19 +27,24 @@ const DestinosChart = () => {
   }, {});
 
   // Preparar datos para el gráfico, ordenar y tomar top 5
-  const data = Object.entries(destinosCounts)
-    .map(([ciudad, cantidad]) => ({
-      ciudad,
-      cantidad,
-    }))
-    .sort((a, b) => b.cantidad - a.cantidad)
-    .slice(0, 5); // Top 5
-
+  const data = [];
+  for (const ciudad in destinosCounts) {
+    data.push({
+      ciudad: ciudad,
+      cantidad: destinosCounts[ciudad]
+    });
+  }
+  data.sort((a, b) => b.cantidad - a.cantidad);
+  // Tomar solo los primeros 5
+  const top5Data = [];
+  for (let i = 0; i < 5 && i < data.length; i++) {
+    top5Data.push(data[i]);
+  }
   // Gradiente de colores de naranja a azul
   const COLORS = ["#ff6b35", "#ff8c5a", "#ffa87e", "#3b82f6", "#60a5fa"];
 
   // Si no hay datos
-  if (data.length === 0) {
+  if (top5Data.length === 0) {
     return (
       <div className="card">
         <h3 className="card-title">Top 5 Destinos Frecuentes</h3>
@@ -84,7 +89,7 @@ const DestinosChart = () => {
       <div style={{ width: "100%", height: "300px" }}>
         <ResponsiveContainer width="100%" height="100%">
           <BarChart
-            data={data}
+            data={top5Data}
             layout="vertical"
             margin={{ top: 20, right: 30, left: 100, bottom: 20 }}
           >
@@ -102,7 +107,7 @@ const DestinosChart = () => {
             />
             <Tooltip content={<CustomTooltip />} cursor={{ fill: "rgba(0, 0, 0, 0.05)" }} />
             <Bar dataKey="cantidad" radius={[0, 4, 4, 0]}>
-              {data.map((entry, index) => (
+              {top5Data.map((entry, index) => (
                 <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
               ))}
             </Bar>
